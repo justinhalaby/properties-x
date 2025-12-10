@@ -59,6 +59,12 @@ export default function Dashboard() {
               >
                 Map View
               </Link>
+              <Link
+                href="/buildings"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Evaluations
+              </Link>
               <Link href="/add-property">
                 <Button size="sm">Add Property</Button>
               </Link>

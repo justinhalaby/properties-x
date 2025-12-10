@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "clean:evaluations": "tsx scripts/clean-csv.ts",
+    "import:evaluations": "dotenv -e .env.local -- tsx scripts/import-evaluations.ts",
+    "import:evaluations:v2": "dotenv -e .env.local -- tsx scripts/import-evaluations-v2.ts",
+    "find:missing": "dotenv -e .env.local -- tsx scripts/find-missing.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -25,9 +29,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cli-progress": "^3.12.0",
+    "csv-parse": "^5.5.3",
+    "csv-stringify": "^6.4.5",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
     "tailwindcss": "^4",
+    "tsx": "^4.7.0",
     "typescript": "^5"
   }
 }

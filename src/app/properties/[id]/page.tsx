@@ -121,8 +121,23 @@ export default function PropertyDetailPage() {
               properties-x
             </Link>
             <nav className="flex items-center gap-4">
-              <Link href="/map" className="text-muted-foreground hover:text-foreground">
+              <Link
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Properties
+              </Link>
+              <Link
+                href="/map"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Map View
+              </Link>
+              <Link
+                href="/buildings"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Evaluations
               </Link>
               <Link href="/add-property">
                 <Button size="sm">Add Property</Button>

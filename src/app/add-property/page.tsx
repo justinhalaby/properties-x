@@ -109,6 +109,26 @@ export default function AddPropertyPage() {
             <Link href="/" className="text-xl font-bold text-foreground">
               properties-x
             </Link>
+            <nav className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Properties
+              </Link>
+              <Link
+                href="/map"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Map View
+              </Link>
+              <Link
+                href="/buildings"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Evaluations
+              </Link>
+            </nav>
           </div>
         </div>
       </header>

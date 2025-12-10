@@ -40,10 +40,18 @@ export class CentrisScraper extends BaseScraper {
 
     if (address) return this.cleanText(address);
 
+    // Extract from page title (format: "Type à vendre à City, City (Region), ADDRESS, ID - Centris.ca")
+    const title = $("title").text();
+    // Match address pattern like "5125 - 5135, Avenue Bourret" or "123, Rue Example"
+    const titleAddressMatch = title.match(/,\s*(\d[\d\s\-]+,?\s*(?:Avenue|Rue|Boulevard|Boul\.|Chemin|Place|Av\.)\s+[^,]+)/i);
+    if (titleAddressMatch) {
+      return this.cleanText(titleAddressMatch[1]);
+    }
+
     // Search in body for Montreal address patterns
     const bodyText = $("body").text();
     // Match patterns like "1234 rue/avenue/boulevard Name"
-    const addressMatch = bodyText.match(/(\d{1,5}\s+(?:rue|avenue|av\.|boul\.|boulevard|chemin|ch\.|place|pl\.)\s+[A-Za-zÀ-ÿ\-\s]+?)(?:,|\s+Montréal|\s+Montreal|\s+H\d)/i);
+    const addressMatch = bodyText.match(/(\d{1,5}[\d\s\-]*,?\s*(?:rue|avenue|av\.|boul\.|boulevard|chemin|ch\.|place|pl\.)\s+[A-Za-zÀ-ÿ\-\s]+?)(?:,|\s+Montréal|\s+Montreal|\s+H\d)/i);
     if (addressMatch) {
       return this.cleanText(addressMatch[1]);
     }

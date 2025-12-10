@@ -1,0 +1,21 @@
+
+CSV Cleaning Report
+==================
+Generated: 2025-12-10T20:18:25.548Z
+
+Input File: /Users/justinhalaby/Downloads/uniteevaluationfonciere.csv
+Output File: ./data/property-evaluations-clean.csv
+
+Statistics:
+-----------
+Total rows processed: 512,288
+Valid rows: 512,288
+Invalid rows: 0
+Duplicate IDs: 0
+
+Validation rate: 100.00%
+
+Errors:
+-------
+None
+
