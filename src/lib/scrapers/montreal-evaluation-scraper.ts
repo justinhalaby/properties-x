@@ -110,8 +110,26 @@ export class MontrealEvaluationScraper {
         const items = Array.from(document.querySelectorAll('#identification ~ ul li'));
         const item = items.find(li => li.textContent?.includes(label));
         if (!item) return "";
+
         const divs = item.querySelectorAll('div');
-        return divs[1]?.textContent?.trim() || "";
+        // Try div[1] first, if it's the same as the label, try other divs
+        const div1Text = divs[1]?.textContent?.trim() || "";
+        if (div1Text && div1Text !== label && !div1Text.includes(label)) {
+          return div1Text;
+        }
+
+        // If div[1] is the label, the value might be in div[0] or div[2]
+        const div0Text = divs[0]?.textContent?.trim() || "";
+        if (div0Text && div0Text !== label && !div0Text.includes(label)) {
+          return div0Text;
+        }
+
+        const div2Text = divs[2]?.textContent?.trim() || "";
+        if (div2Text && div2Text !== label && !div2Text.includes(label)) {
+          return div2Text;
+        }
+
+        return "";
       };
 
       return {
@@ -177,8 +195,25 @@ export class MontrealEvaluationScraper {
         const items = Array.from(ul.querySelectorAll('li'));
         const item = items.find(li => li.textContent?.includes(label));
         if (!item) return "";
+
         const divs = item.querySelectorAll('div');
-        return divs[1]?.textContent?.trim() || "";
+        // Try div[1] first, if it's the same as the label, try other divs
+        const div1Text = divs[1]?.textContent?.trim() || "";
+        if (div1Text && div1Text !== label && !div1Text.includes(label)) {
+          return div1Text;
+        }
+
+        const div0Text = divs[0]?.textContent?.trim() || "";
+        if (div0Text && div0Text !== label && !div0Text.includes(label)) {
+          return div0Text;
+        }
+
+        const div2Text = divs[2]?.textContent?.trim() || "";
+        if (div2Text && div2Text !== label && !div2Text.includes(label)) {
+          return div2Text;
+        }
+
+        return "";
       };
 
       return {
@@ -219,8 +254,25 @@ export class MontrealEvaluationScraper {
         const items = Array.from(ul.querySelectorAll('li'));
         const item = items.find(li => li.textContent?.includes(label));
         if (!item) return "";
+
         const divs = item.querySelectorAll('div');
-        return divs[1]?.textContent?.trim() || "";
+        // Try div[1] first, if it's the same as the label, try other divs
+        const div1Text = divs[1]?.textContent?.trim() || "";
+        if (div1Text && div1Text !== label && !div1Text.includes(label)) {
+          return div1Text;
+        }
+
+        const div0Text = divs[0]?.textContent?.trim() || "";
+        if (div0Text && div0Text !== label && !div0Text.includes(label)) {
+          return div0Text;
+        }
+
+        const div2Text = divs[2]?.textContent?.trim() || "";
+        if (div2Text && div2Text !== label && !div2Text.includes(label)) {
+          return div2Text;
+        }
+
+        return "";
       };
 
       return {
