@@ -51,6 +51,9 @@ export function EvaluationTable({
                 Address
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Matricule
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Category
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -80,6 +83,9 @@ export function EvaluationTable({
                   <div className="font-medium text-foreground">
                     {evaluation.clean_address}
                   </div>
+                </td>
+                <td className="px-4 py-3 text-sm text-muted-foreground font-mono">
+                  {evaluation.matricule83 || "-"}
                 </td>
                 <td className="px-4 py-3">
                   <Badge
@@ -130,6 +136,9 @@ export function EvaluationTable({
           >
             <div className="font-medium text-foreground mb-2">
               {evaluation.clean_address}
+            </div>
+            <div className="text-xs text-muted-foreground font-mono mb-2">
+              Matricule: {evaluation.matricule83 || "-"}
             </div>
             <div className="flex items-center gap-2 mb-3">
               <Badge

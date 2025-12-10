@@ -63,7 +63,7 @@ export default function Dashboard() {
                 href="/buildings"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Evaluations
+                Buildings
               </Link>
               <Link href="/add-property">
                 <Button size="sm">Add Property</Button>
