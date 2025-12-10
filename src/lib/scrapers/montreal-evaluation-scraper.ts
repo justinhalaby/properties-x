@@ -55,6 +55,14 @@ export class MontrealEvaluationScraper {
       // Wait for form validation to complete
       await page.waitForTimeout(1000);
 
+      // Remove any stale error banners that might block submission
+      await page.evaluate(() => {
+        const alert = document.querySelector('.alert-danger');
+        if (alert) {
+          alert.remove();
+        }
+      });
+
       // Submit the form
       await page.locator('[data-test="submit"]').click();
       await page.waitForURL('**/liste**', { timeout: 30000 });
