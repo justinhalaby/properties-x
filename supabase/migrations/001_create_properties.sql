@@ -24,7 +24,8 @@ CREATE TABLE properties (
     sqft INTEGER,
     lot_size INTEGER, -- in sqft
     year_built INTEGER,
-    property_type TEXT, -- 'single_family', 'condo', 'duplex', 'triplex', 'plex', 'land', 'commercial'
+    property_type TEXT, -- 'single_family', 'condo', 'duplex', 'triplex', 'quadruplex', 'quintuplex', 'plex', 'multi_residential', 'land', 'commercial'
+    units INTEGER, -- Number of units for multi-residential properties
     mls_number TEXT,
 
     -- Extended information

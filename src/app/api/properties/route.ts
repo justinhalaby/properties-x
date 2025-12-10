@@ -88,6 +88,8 @@ export async function POST(request: Request) {
         lot_size: body.lot_size ?? null,
         year_built: body.year_built ?? null,
         property_type: body.property_type ?? null,
+        units: body.units ?? null,
+        unit_details: body.unit_details ?? null,
         mls_number: body.mls_number ?? null,
         description: body.description ?? null,
         features: body.features ?? [],
@@ -95,6 +97,16 @@ export async function POST(request: Request) {
         latitude: body.latitude ?? null,
         longitude: body.longitude ?? null,
         notes: body.notes ?? null,
+        potential_revenue: body.potential_revenue ?? null,
+        municipal_assessment: body.municipal_assessment ?? null,
+        assessment_land: body.assessment_land ?? null,
+        assessment_building: body.assessment_building ?? null,
+        taxes: body.taxes ?? null,
+        taxes_municipal: body.taxes_municipal ?? null,
+        taxes_school: body.taxes_school ?? null,
+        expenses: body.expenses ?? null,
+        expense_electricity: body.expense_electricity ?? null,
+        expense_heating: body.expense_heating ?? null,
       })
       .select()
       .single();

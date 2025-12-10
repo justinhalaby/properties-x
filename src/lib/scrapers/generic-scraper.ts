@@ -126,6 +126,44 @@ export class GenericScraper extends BaseScraper {
     return this.inferPropertyType(typeText);
   }
 
+  protected extractUnits(): number | null {
+    const $ = this.$!;
+
+    const unitsText =
+      $('[class*="units"]').first().text() ||
+      $('[class*="logement"]').first().text();
+
+    const match = unitsText.match(/(\d+)/);
+    if (match) {
+      return parseInt(match[1]);
+    }
+
+    // Try to infer from title
+    const title = this.extractTitle().toLowerCase();
+    if (title.includes("duplex")) return 2;
+    if (title.includes("triplex")) return 3;
+    if (title.includes("quadruplex")) return 4;
+    if (title.includes("quintuplex")) return 5;
+
+    return null;
+  }
+
+  protected extractUnitDetails(): string | null {
+    const $ = this.$!;
+
+    // Look for unit breakdown patterns in body
+    const bodyText = $("body").text();
+    const unitPatterns = bodyText.match(/(\d+\s*x\s*\d+½?|\d+½)/gi);
+    if (unitPatterns && unitPatterns.length > 0) {
+      const filtered = unitPatterns.filter(p => p.includes("½"));
+      if (filtered.length > 0) {
+        return [...new Set(filtered)].join(", ");
+      }
+    }
+
+    return null;
+  }
+
   protected extractMlsNumber(): string | null {
     const $ = this.$!;
 
@@ -182,5 +220,87 @@ export class GenericScraper extends BaseScraper {
     });
 
     return [...new Set(images)].slice(0, 20); // Limit to 20 images
+  }
+
+  protected extractPotentialRevenue(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const revenueMatch = bodyText.match(/(?:revenus?\s*(?:potentiels?|annuels?)?|potential\s*(?:revenue|income))\s*:?\s*\$?\s*([\d\s,]+)/i);
+    if (revenueMatch) {
+      return this.parsePrice(revenueMatch[1]);
+    }
+    return null;
+  }
+
+  protected extractMunicipalAssessment(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:évaluation\s*municipale|municipal\s*assessment)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    if (match) {
+      return this.parsePrice(match[1]);
+    }
+    return null;
+  }
+
+  protected extractTaxes(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:taxes?\s*(?:municipales?|annuelles?)?)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    if (match) {
+      return this.parsePrice(match[1]);
+    }
+    return null;
+  }
+
+  protected extractExpenses(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:dépenses?|expenses?|frais\s*d'exploitation)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    if (match) {
+      return this.parsePrice(match[1]);
+    }
+    return null;
+  }
+
+  protected extractAssessmentLand(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:terrain|land)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
+  }
+
+  protected extractAssessmentBuilding(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:bâtiment|batiment|building)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
+  }
+
+  protected extractTaxesMunicipal(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/taxes?\s*municipales?\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
+  }
+
+  protected extractTaxesSchool(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/taxes?\s*scolaires?\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
+  }
+
+  protected extractExpenseElectricity(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:électricité|electricite|electricity)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
+  }
+
+  protected extractExpenseHeating(): number | null {
+    const $ = this.$!;
+    const bodyText = $("body").text();
+    const match = bodyText.match(/(?:mazout|chauffage|heating)\s*:?\s*\$?\s*([\d\s,]+)/i);
+    return match ? this.parsePrice(match[1]) : null;
   }
 }

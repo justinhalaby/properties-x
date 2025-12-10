@@ -225,6 +225,19 @@ export default function AddPropertyPage() {
                   />
 
                   <Input
+                    label="Units"
+                    type="number"
+                    value={manualProperty.units ?? ""}
+                    onChange={(e) =>
+                      updateManualField(
+                        "units",
+                        e.target.value ? parseInt(e.target.value) : undefined
+                      )
+                    }
+                    placeholder="For multi-residential"
+                  />
+
+                  <Input
                     label="Address"
                     value={manualProperty.address || ""}
                     onChange={(e) =>

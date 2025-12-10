@@ -102,6 +102,23 @@ export function ScrapePreview({ property, onSave, onCancel }: ScrapePreviewProps
           />
 
           <Input
+            label="Units"
+            type="number"
+            value={editedProperty.units ?? ""}
+            onChange={(e) =>
+              updateField("units", e.target.value ? parseInt(e.target.value) : undefined)
+            }
+            placeholder="For multi-residential"
+          />
+
+          <Input
+            label="Unit Details"
+            value={editedProperty.unit_details || ""}
+            onChange={(e) => updateField("unit_details", e.target.value || undefined)}
+            placeholder="e.g., 2 x 4½, 1 x 5½"
+          />
+
+          <Input
             label="Address"
             value={editedProperty.address || ""}
             onChange={(e) => updateField("address", e.target.value || undefined)}
@@ -149,6 +166,103 @@ export function ScrapePreview({ property, onSave, onCancel }: ScrapePreviewProps
               updateField("year_built", e.target.value ? parseInt(e.target.value) : undefined)
             }
           />
+
+          <Input
+            label="Potential Revenue"
+            type="number"
+            value={editedProperty.potential_revenue ?? ""}
+            onChange={(e) =>
+              updateField("potential_revenue", e.target.value ? parseFloat(e.target.value) : undefined)
+            }
+            placeholder="Annual revenue"
+          />
+        </div>
+
+        {/* Financial Details Section */}
+        <div className="space-y-4 pt-2">
+          <h4 className="text-sm font-medium text-foreground">Évaluation municipale</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Terrain"
+              type="number"
+              value={editedProperty.assessment_land ?? ""}
+              onChange={(e) =>
+                updateField("assessment_land", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Bâtiment"
+              type="number"
+              value={editedProperty.assessment_building ?? ""}
+              onChange={(e) =>
+                updateField("assessment_building", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Total"
+              type="number"
+              value={editedProperty.municipal_assessment ?? ""}
+              onChange={(e) =>
+                updateField("municipal_assessment", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+          </div>
+
+          <h4 className="text-sm font-medium text-foreground">Taxes</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Municipales"
+              type="number"
+              value={editedProperty.taxes_municipal ?? ""}
+              onChange={(e) =>
+                updateField("taxes_municipal", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Scolaires"
+              type="number"
+              value={editedProperty.taxes_school ?? ""}
+              onChange={(e) =>
+                updateField("taxes_school", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Total"
+              type="number"
+              value={editedProperty.taxes ?? ""}
+              onChange={(e) =>
+                updateField("taxes", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+          </div>
+
+          <h4 className="text-sm font-medium text-foreground">Dépenses</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Électricité"
+              type="number"
+              value={editedProperty.expense_electricity ?? ""}
+              onChange={(e) =>
+                updateField("expense_electricity", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Mazout/Chauffage"
+              type="number"
+              value={editedProperty.expense_heating ?? ""}
+              onChange={(e) =>
+                updateField("expense_heating", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+            <Input
+              label="Total"
+              type="number"
+              value={editedProperty.expenses ?? ""}
+              onChange={(e) =>
+                updateField("expenses", e.target.value ? parseFloat(e.target.value) : undefined)
+              }
+            />
+          </div>
         </div>
 
         {/* Description */}

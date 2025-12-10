@@ -259,6 +259,18 @@ export default function PropertyDetailPage() {
                     <span className="capitalize">{property.property_type.replace("_", " ")}</span>
                   </div>
                 )}
+                {property.units != null && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Units</span>
+                    <span>{property.units}</span>
+                  </div>
+                )}
+                {property.unit_details && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Unit Breakdown</span>
+                    <span className="text-right">{property.unit_details}</span>
+                  </div>
+                )}
                 {property.bedrooms != null && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bedrooms</span>
@@ -297,6 +309,104 @@ export default function PropertyDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Financial Details */}
+            {(property.potential_revenue != null || property.municipal_assessment != null || property.taxes != null || property.expenses != null) && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Financial Details</h2>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {property.potential_revenue != null && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Potential Revenue</span>
+                      <span className="text-primary font-medium">{formatPrice(property.potential_revenue)}/yr</span>
+                    </div>
+                  )}
+
+                  {/* Municipal Assessment */}
+                  {(property.municipal_assessment != null || property.assessment_land != null || property.assessment_building != null) && (
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Évaluation municipale</span>
+                      <div className="pl-3 space-y-1 text-sm">
+                        {property.assessment_land != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Terrain</span>
+                            <span>{formatPrice(property.assessment_land)}</span>
+                          </div>
+                        )}
+                        {property.assessment_building != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Bâtiment</span>
+                            <span>{formatPrice(property.assessment_building)}</span>
+                          </div>
+                        )}
+                        {property.municipal_assessment != null && (
+                          <div className="flex justify-between font-medium border-t border-border pt-1 mt-1">
+                            <span className="text-muted-foreground">Total</span>
+                            <span>{formatPrice(property.municipal_assessment)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Taxes */}
+                  {(property.taxes != null || property.taxes_municipal != null || property.taxes_school != null) && (
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Taxes</span>
+                      <div className="pl-3 space-y-1 text-sm">
+                        {property.taxes_municipal != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Municipales</span>
+                            <span>{formatPrice(property.taxes_municipal)}/yr</span>
+                          </div>
+                        )}
+                        {property.taxes_school != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Scolaires</span>
+                            <span>{formatPrice(property.taxes_school)}/yr</span>
+                          </div>
+                        )}
+                        {property.taxes != null && (
+                          <div className="flex justify-between font-medium border-t border-border pt-1 mt-1">
+                            <span className="text-muted-foreground">Total</span>
+                            <span>{formatPrice(property.taxes)}/yr</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expenses */}
+                  {(property.expenses != null || property.expense_electricity != null || property.expense_heating != null) && (
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Dépenses</span>
+                      <div className="pl-3 space-y-1 text-sm">
+                        {property.expense_electricity != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Électricité</span>
+                            <span>{formatPrice(property.expense_electricity)}/yr</span>
+                          </div>
+                        )}
+                        {property.expense_heating != null && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Mazout/Chauffage</span>
+                            <span>{formatPrice(property.expense_heating)}/yr</span>
+                          </div>
+                        )}
+                        {property.expenses != null && (
+                          <div className="flex justify-between font-medium border-t border-border pt-1 mt-1">
+                            <span className="text-muted-foreground">Total</span>
+                            <span>{formatPrice(property.expenses)}/yr</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Source */}
             {property.source_url && (

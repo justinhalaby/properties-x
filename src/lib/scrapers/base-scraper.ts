@@ -30,10 +30,22 @@ export abstract class BaseScraper {
       lot_size: this.extractLotSize(),
       year_built: this.extractYearBuilt(),
       property_type: this.extractPropertyType(),
+      units: this.extractUnits(),
+      unit_details: this.extractUnitDetails(),
       mls_number: this.extractMlsNumber(),
       description: this.extractDescription(),
       features: this.extractFeatures(),
       images: this.extractImages(),
+      potential_revenue: this.extractPotentialRevenue(),
+      municipal_assessment: this.extractMunicipalAssessment(),
+      assessment_land: this.extractAssessmentLand(),
+      assessment_building: this.extractAssessmentBuilding(),
+      taxes: this.extractTaxes(),
+      taxes_municipal: this.extractTaxesMunicipal(),
+      taxes_school: this.extractTaxesSchool(),
+      expenses: this.extractExpenses(),
+      expense_electricity: this.extractExpenseElectricity(),
+      expense_heating: this.extractExpenseHeating(),
     };
   }
 
@@ -72,17 +84,27 @@ export abstract class BaseScraper {
   protected inferPropertyType(text: string): PropertyType | null {
     const lower = text.toLowerCase();
 
-    if (lower.includes("condo") || lower.includes("appartement") || lower.includes("apartment")) {
-      return "condo";
+    // Multi-residential / revenue properties
+    if (lower.includes("multifamilial") || lower.includes("multi-familial") || lower.includes("multi-residential") || lower.includes("multiresidential") || lower.includes("immeuble de rapport") || lower.includes("immeuble à revenus")) {
+      return "multi_residential";
     }
-    if (lower.includes("triplex")) {
+    if (lower.includes("quintuplex") || lower.includes("5-plex") || lower.includes("5 plex")) {
+      return "quintuplex";
+    }
+    if (lower.includes("quadruplex") || lower.includes("4-plex") || lower.includes("4 plex")) {
+      return "quadruplex";
+    }
+    if (lower.includes("triplex") || lower.includes("3-plex") || lower.includes("3 plex")) {
       return "triplex";
     }
-    if (lower.includes("duplex")) {
+    if (lower.includes("duplex") || lower.includes("2-plex") || lower.includes("2 plex")) {
       return "duplex";
     }
     if (lower.includes("plex") || lower.includes("multiplex") || lower.includes("revenue")) {
       return "plex";
+    }
+    if (lower.includes("condo") || lower.includes("appartement") || lower.includes("apartment")) {
+      return "condo";
     }
     if (lower.includes("terrain") || lower.includes("land") || lower.includes("lot")) {
       return "land";
@@ -109,8 +131,21 @@ export abstract class BaseScraper {
   protected abstract extractLotSize(): number | null;
   protected abstract extractYearBuilt(): number | null;
   protected abstract extractPropertyType(): PropertyType | null;
+  protected abstract extractUnits(): number | null;
+  protected abstract extractUnitDetails(): string | null;
   protected abstract extractMlsNumber(): string | null;
   protected abstract extractDescription(): string | null;
   protected abstract extractFeatures(): string[];
   protected abstract extractImages(): string[];
+  // Financial data extraction
+  protected abstract extractPotentialRevenue(): number | null;
+  protected abstract extractMunicipalAssessment(): number | null;
+  protected abstract extractAssessmentLand(): number | null;
+  protected abstract extractAssessmentBuilding(): number | null;
+  protected abstract extractTaxes(): number | null;
+  protected abstract extractTaxesMunicipal(): number | null;
+  protected abstract extractTaxesSchool(): number | null;
+  protected abstract extractExpenses(): number | null;
+  protected abstract extractExpenseElectricity(): number | null;
+  protected abstract extractExpenseHeating(): number | null;
 }
