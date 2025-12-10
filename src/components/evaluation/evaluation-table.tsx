@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,38 @@ export function EvaluationTable({
   pagination,
   onPageChange,
 }: EvaluationTableProps) {
+  const [scrapingMatricules, setScrapingMatricules] = useState<Set<string>>(new Set());
+  const [scrapedMatricules, setScrapedMatricules] = useState<Set<string>>(new Set());
+
+  const handleScrape = async (matricule: string) => {
+    setScrapingMatricules(prev => new Set(prev).add(matricule));
+
+    try {
+      const response = await fetch("/api/montreal-evaluation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matricule }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to scrape");
+      }
+
+      setScrapedMatricules(prev => new Set(prev).add(matricule));
+      alert(result.fromCache ? "Data loaded from database" : "Successfully scraped and saved!");
+    } catch (error) {
+      console.error("Scraping error:", error);
+      alert(error instanceof Error ? error.message : "Failed to scrape property details");
+    } finally {
+      setScrapingMatricules(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(matricule);
+        return newSet;
+      });
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -70,6 +103,9 @@ export function EvaluationTable({
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Areas (m²)
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Actions
               </th>
             </tr>
           </thead>
@@ -120,6 +156,22 @@ export function EvaluationTable({
                   {evaluation.superficie_batiment
                     ? `${evaluation.superficie_batiment.toLocaleString()}`
                     : "-"}
+                </td>
+                <td className="px-4 py-3">
+                  <Button
+                    size="sm"
+                    variant={scrapedMatricules.has(evaluation.matricule83 || "") ? "outline" : "default"}
+                    disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
+                    onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
+                  >
+                    {scrapingMatricules.has(evaluation.matricule83 || "") ? (
+                      <>Scraping...</>
+                    ) : scrapedMatricules.has(evaluation.matricule83 || "") ? (
+                      <>Scraped ✓</>
+                    ) : (
+                      <>Get Details</>
+                    )}
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -175,6 +227,23 @@ export function EvaluationTable({
                   ? `${evaluation.superficie_terrain.toLocaleString()} m²`
                   : "-"}
               </div>
+            </div>
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant={scrapedMatricules.has(evaluation.matricule83 || "") ? "outline" : "default"}
+                disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
+                onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
+                className="w-full"
+              >
+                {scrapingMatricules.has(evaluation.matricule83 || "") ? (
+                  <>Scraping...</>
+                ) : scrapedMatricules.has(evaluation.matricule83 || "") ? (
+                  <>Scraped ✓</>
+                ) : (
+                  <>Get Details</>
+                )}
+              </Button>
             </div>
           </div>
         ))}

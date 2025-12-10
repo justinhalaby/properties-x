@@ -18,6 +18,8 @@
     "cheerio": "^1.1.2",
     "leaflet": "^1.9.4",
     "next": "16.0.8",
+    "playwright": "^1.57.0",
+    "puppeteer": "^24.32.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-leaflet": "^5.0.0",

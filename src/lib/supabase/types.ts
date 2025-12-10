@@ -1,5 +1,6 @@
 import type { Property } from "@/types/property";
 import type { PropertyEvaluation, PropertyEvaluationInsert } from "@/types/property-evaluation";
+import type { MontrealEvaluationDetails, MontrealEvaluationInsert } from "@/types/montreal-evaluation";
 
 export type Json =
   | string
@@ -21,6 +22,11 @@ export interface Database {
         Row: PropertyEvaluation;
         Insert: PropertyEvaluationInsert;
         Update: Partial<PropertyEvaluationInsert>;
+      };
+      montreal_evaluation_details: {
+        Row: MontrealEvaluationDetails;
+        Insert: MontrealEvaluationInsert;
+        Update: Partial<MontrealEvaluationInsert>;
       };
     };
     Views: Record<string, never>;
