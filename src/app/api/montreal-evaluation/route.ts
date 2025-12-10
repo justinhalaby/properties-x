@@ -3,6 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { MontrealEvaluationScraper } from "@/lib/scrapers/montreal-evaluation-scraper";
 import type { MontrealEvaluationInsert } from "@/types/montreal-evaluation";
 
+// Helper function to parse French-formatted numbers (with spaces)
+function parseNumber(value: string | null | undefined): number | null {
+  if (!value) return null;
+  // Remove all spaces and parse
+  const cleaned = value.replace(/\s/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? null : parsed;
+}
+
 export async function POST(request: Request) {
   try {
     const { matricule } = await request.json();
@@ -66,33 +75,33 @@ export async function POST(request: Request) {
       owner_special_conditions: scrapedData.owner.special_conditions || null,
 
       // Land
-      land_frontage: scrapedData.land.frontage ? parseFloat(scrapedData.land.frontage) : null,
-      land_area: scrapedData.land.area ? parseFloat(scrapedData.land.area) : null,
+      land_frontage: parseNumber(scrapedData.land.frontage),
+      land_area: parseNumber(scrapedData.land.area),
 
       // Building
-      building_floors: scrapedData.building.floors ? parseInt(scrapedData.building.floors) : null,
-      building_year: scrapedData.building.year ? parseInt(scrapedData.building.year) : null,
-      building_floor_area: scrapedData.building.floor_area ? parseFloat(scrapedData.building.floor_area) : null,
+      building_floors: parseNumber(scrapedData.building.floors),
+      building_year: parseNumber(scrapedData.building.year),
+      building_floor_area: parseNumber(scrapedData.building.floor_area),
       building_construction_type: scrapedData.building.construction_type || null,
       building_physical_link: scrapedData.building.physical_link || null,
-      building_units: scrapedData.building.units ? parseInt(scrapedData.building.units) : null,
-      building_non_residential_spaces: scrapedData.building.non_residential_spaces ? parseInt(scrapedData.building.non_residential_spaces) : null,
-      building_rental_rooms: scrapedData.building.rental_rooms ? parseInt(scrapedData.building.rental_rooms) : null,
+      building_units: parseNumber(scrapedData.building.units),
+      building_non_residential_spaces: parseNumber(scrapedData.building.non_residential_spaces),
+      building_rental_rooms: parseNumber(scrapedData.building.rental_rooms),
 
       // Current valuation
       current_market_date: scrapedData.valuation.current.market_date || null,
-      current_land_value: scrapedData.valuation.current.land_value ? parseFloat(scrapedData.valuation.current.land_value) : null,
-      current_building_value: scrapedData.valuation.current.building_value ? parseFloat(scrapedData.valuation.current.building_value) : null,
-      current_total_value: scrapedData.valuation.current.total_value ? parseFloat(scrapedData.valuation.current.total_value) : null,
+      current_land_value: parseNumber(scrapedData.valuation.current.land_value),
+      current_building_value: parseNumber(scrapedData.valuation.current.building_value),
+      current_total_value: parseNumber(scrapedData.valuation.current.total_value),
 
       // Previous valuation
       previous_market_date: scrapedData.valuation.previous.market_date || null,
-      previous_total_value: scrapedData.valuation.previous.total_value ? parseFloat(scrapedData.valuation.previous.total_value) : null,
+      previous_total_value: parseNumber(scrapedData.valuation.previous.total_value),
 
       // Fiscal
       tax_category: scrapedData.fiscal.tax_category || null,
-      taxable_value: scrapedData.fiscal.taxable_value ? parseFloat(scrapedData.fiscal.taxable_value) : null,
-      non_taxable_value: scrapedData.fiscal.non_taxable_value ? parseFloat(scrapedData.fiscal.non_taxable_value) : null,
+      taxable_value: parseNumber(scrapedData.fiscal.taxable_value),
+      non_taxable_value: parseNumber(scrapedData.fiscal.non_taxable_value),
 
       // Tax PDFs
       tax_account_pdfs: scrapedData.tax_pdfs.length > 0 ? scrapedData.tax_pdfs : null,

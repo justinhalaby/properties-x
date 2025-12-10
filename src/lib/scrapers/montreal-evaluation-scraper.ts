@@ -78,18 +78,7 @@ export class MontrealEvaluationScraper {
         owner: await this.scrapeOwner(page),
         land: await this.scrapeLand(page),
         building: await this.scrapeBuilding(page),
-        valuation: {
-          current: {
-            market_date: "",
-            land_value: "",
-            building_value: "",
-            total_value: "",
-          },
-          previous: {
-            market_date: "",
-            total_value: "",
-          },
-        },
+        valuation: await this.scrapeValuation(page),
         fiscal: await this.scrapeFiscal(page),
         tax_pdfs: [],
         metadata: await this.scrapeMetadata(page),
@@ -288,14 +277,97 @@ export class MontrealEvaluationScraper {
     });
   }
 
+  private async scrapeValuation(page: Page) {
+    return await page.evaluate(() => {
+      // Find all h3 elements and locate the valuation section
+      const allH3 = Array.from(document.querySelectorAll('h3'));
+      let currentUl: Element | null = null;
+      let previousUl: Element | null = null;
+
+      // Find "Rôle courant" section
+      const currentH3 = allH3.find(h3 => h3.textContent?.includes("Rôle courant"));
+      if (currentH3) {
+        currentUl = currentH3.nextElementSibling;
+      }
+
+      // Find "Rôle antérieur" section
+      const previousH3 = allH3.find(h3 => h3.textContent?.includes("Rôle antérieur"));
+      if (previousH3) {
+        previousUl = previousH3.nextElementSibling;
+      }
+
+      const getText = (ul: Element | null, label: string): string => {
+        if (!ul) return "";
+        const items = Array.from(ul.querySelectorAll('li'));
+        const item = items.find(li => li.textContent?.includes(label));
+        if (!item) return "";
+
+        const divs = item.querySelectorAll('div');
+        // Try div[1] first, if it's the same as the label, try other divs
+        const div1Text = divs[1]?.textContent?.trim() || "";
+        if (div1Text && div1Text !== label && !div1Text.includes(label)) {
+          return div1Text;
+        }
+
+        const div0Text = divs[0]?.textContent?.trim() || "";
+        if (div0Text && div0Text !== label && !div0Text.includes(label)) {
+          return div0Text;
+        }
+
+        const div2Text = divs[2]?.textContent?.trim() || "";
+        if (div2Text && div2Text !== label && !div2Text.includes(label)) {
+          return div2Text;
+        }
+
+        return "";
+      };
+
+      // Current role
+      const current = {
+        market_date: getText(currentUl, "Date de référence au marché"),
+        land_value: getText(currentUl, "Valeur du terrain"),
+        building_value: getText(currentUl, "Valeur du bâtiment"),
+        total_value: getText(currentUl, "Valeur de l'immeuble"),
+      };
+
+      // Previous role
+      const previous = {
+        market_date: getText(previousUl, "Date de référence au marché"),
+        total_value: getText(previousUl, "Valeur de l'immeuble au rôle antérieur"),
+      };
+
+      return {
+        current,
+        previous,
+      };
+    });
+  }
+
   private async scrapeFiscal(page: Page) {
     return await page.evaluate(() => {
       const getText = (label: string): string => {
         const items = Array.from(document.querySelectorAll('#repartition ~ ul li'));
         const item = items.find(li => li.textContent?.includes(label));
         if (!item) return "";
+
         const divs = item.querySelectorAll('div');
-        return divs[1]?.textContent?.trim() || "";
+        // Try div[1] first, if it's the same as the label, try other divs
+        const div1Text = divs[1]?.textContent?.trim() || "";
+        if (div1Text && div1Text !== label && !div1Text.includes(label)) {
+          return div1Text;
+        }
+
+        const div0Text = divs[0]?.textContent?.trim() || "";
+        if (div0Text && div0Text !== label && !div0Text.includes(label)) {
+          return div0Text;
+        }
+
+        const div2Text = divs[2]?.textContent?.trim() || "";
+        if (div2Text && div2Text !== label && !div2Text.includes(label)) {
+          return div2Text;
+        }
+
+        return "";
       };
 
       const table = document.querySelector('table');
