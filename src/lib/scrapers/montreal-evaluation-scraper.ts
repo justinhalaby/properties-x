@@ -15,7 +15,7 @@ export class MontrealEvaluationScraper {
   async scrape(matricule: string): Promise<ScrapedMontrealData> {
     try {
       this.browser = await firefox.launch({
-        headless: false,
+        headless: true,
         slowMo: 500,
       });
 
