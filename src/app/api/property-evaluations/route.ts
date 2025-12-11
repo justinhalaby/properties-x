@@ -103,6 +103,12 @@ export async function GET(request: Request) {
       query = query.lte("superficie_batiment", parseInt(maxBatimentArea));
     }
 
+    // Filter: Has coordinates (for map display)
+    const hasCoordinates = searchParams.get("hasCoordinates");
+    if (hasCoordinates === "true") {
+      query = query.not("latitude", "is", null).not("longitude", "is", null);
+    }
+
     // Execute query with pagination
     const { data, error, count } = await query
       .range(offset, offset + limit - 1)

@@ -42,6 +42,9 @@ export interface PropertyEvaluation {
   superficie_batiment: number | null;
   clean_address: string;
   full_address: string;
+  latitude?: number | null; // Geocoded coordinates
+  longitude?: number | null;
+  geocoded_at?: string | null;
   created_at: string;
   updated_at: string;
   scraped_at?: string | null; // From montreal_evaluation_details join
@@ -67,6 +70,9 @@ export interface PropertyEvaluationInsert {
   categorie_uef: string;
   superficie_terrain?: number | null;
   superficie_batiment?: number | null;
+  latitude?: number | null; // Geocoded coordinates
+  longitude?: number | null;
+  geocoded_at?: string | null;
 }
 
 // Filter types for API

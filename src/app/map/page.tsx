@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Property } from "@/types/property";
+import type { PropertyEvaluation } from "@/types/property-evaluation";
 
 // Dynamic import for Leaflet map (no SSR)
 const PropertiesMap = dynamic(
@@ -24,22 +25,35 @@ const PropertiesMap = dynamic(
 export default function MapPage() {
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [evaluations, setEvaluations] = useState<PropertyEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProperties();
+    fetchData();
   }, []);
 
-  const fetchProperties = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch("/api/properties");
-      const result = await response.json();
+      // Fetch both properties and evaluations in parallel
+      const [propertiesRes, evaluationsRes] = await Promise.all([
+        fetch("/api/properties"),
+        fetch("/api/property-evaluations?hasCoordinates=true&limit=1000"),
+      ]);
 
-      if (response.ok) {
-        setProperties(result.data || []);
+      const [propertiesData, evaluationsData] = await Promise.all([
+        propertiesRes.json(),
+        evaluationsRes.json(),
+      ]);
+
+      if (propertiesRes.ok) {
+        setProperties(propertiesData.data || []);
+      }
+
+      if (evaluationsRes.ok) {
+        setEvaluations(evaluationsData.data || []);
       }
     } catch (error) {
-      console.error("Failed to fetch properties:", error);
+      console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
     }
@@ -52,6 +66,12 @@ export default function MapPage() {
   const propertiesWithLocation = properties.filter(
     (p) => p.latitude != null && p.longitude != null
   );
+
+  const evaluationsWithLocation = evaluations.filter(
+    (e) => e.latitude != null && e.longitude != null
+  );
+
+  const totalOnMap = propertiesWithLocation.length + evaluationsWithLocation.length;
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -90,19 +110,13 @@ export default function MapPage() {
           <span className="text-muted-foreground">
             Showing{" "}
             <span className="text-foreground font-medium">
-              {propertiesWithLocation.length}
+              {totalOnMap.toLocaleString()}
             </span>{" "}
-            of{" "}
-            <span className="text-foreground font-medium">
-              {properties.length}
-            </span>{" "}
-            properties on map
+            locations on map
           </span>
-          {properties.length > propertiesWithLocation.length && (
-            <span className="text-muted-foreground">
-              ({properties.length - propertiesWithLocation.length} without location)
-            </span>
-          )}
+          <span className="text-muted-foreground">
+            ({propertiesWithLocation.length} properties, {evaluationsWithLocation.length} evaluations)
+          </span>
         </div>
       </div>
 
@@ -112,7 +126,7 @@ export default function MapPage() {
           <div className="w-full h-full flex items-center justify-center">
             <LoadingSpinner size="lg" />
           </div>
-        ) : propertiesWithLocation.length === 0 ? (
+        ) : totalOnMap === 0 ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
             <svg
               className="w-16 h-16 mb-4"
@@ -144,6 +158,7 @@ export default function MapPage() {
         ) : (
           <PropertiesMap
             properties={propertiesWithLocation}
+            evaluations={evaluationsWithLocation}
             onPropertyClick={handlePropertyClick}
           />
         )}
