@@ -105,6 +105,9 @@ export function EvaluationTable({
                 Areas (m²)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Last Scraped
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -157,21 +160,36 @@ export function EvaluationTable({
                     ? `${evaluation.superficie_batiment.toLocaleString()}`
                     : "-"}
                 </td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">
+                  {evaluation.scraped_at
+                    ? new Date(evaluation.scraped_at).toLocaleDateString("en-CA")
+                    : "-"}
+                </td>
                 <td className="px-4 py-3">
-                  <Button
-                    size="sm"
-                    variant={scrapedMatricules.has(evaluation.matricule83 || "") ? "outline" : "default"}
-                    disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
-                    onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
-                  >
-                    {scrapingMatricules.has(evaluation.matricule83 || "") ? (
-                      <>Scraping...</>
-                    ) : scrapedMatricules.has(evaluation.matricule83 || "") ? (
-                      <>Scraped ✓</>
-                    ) : (
-                      <>Get Details</>
+                  <div className="flex gap-2 items-center">
+                    {!evaluation.scraped_at && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
+                        onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
+                        className="min-w-[100px]"
+                      >
+                        {scrapingMatricules.has(evaluation.matricule83 || "") ? (
+                          <>Scraping...</>
+                        ) : (
+                          <>Scrape</>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                    {evaluation.matricule83 && (
+                      <Link href={`/buildings/${evaluation.matricule83}`}>
+                        <Button size="sm" variant={evaluation.scraped_at ? "default" : "outline"}>
+                          View
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -227,23 +245,36 @@ export function EvaluationTable({
                   ? `${evaluation.superficie_terrain.toLocaleString()} m²`
                   : "-"}
               </div>
+              <div>
+                <span className="text-muted-foreground">Last Scraped:</span>{" "}
+                {evaluation.scraped_at
+                  ? new Date(evaluation.scraped_at).toLocaleDateString("en-CA")
+                  : "-"}
+              </div>
             </div>
-            <div className="mt-3">
-              <Button
-                size="sm"
-                variant={scrapedMatricules.has(evaluation.matricule83 || "") ? "outline" : "default"}
-                disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
-                onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
-                className="w-full"
-              >
-                {scrapingMatricules.has(evaluation.matricule83 || "") ? (
-                  <>Scraping...</>
-                ) : scrapedMatricules.has(evaluation.matricule83 || "") ? (
-                  <>Scraped ✓</>
-                ) : (
-                  <>Get Details</>
-                )}
-              </Button>
+            <div className="mt-3 flex gap-2">
+              {!evaluation.scraped_at && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={scrapingMatricules.has(evaluation.matricule83 || "") || !evaluation.matricule83}
+                  onClick={() => evaluation.matricule83 && handleScrape(evaluation.matricule83)}
+                  className="flex-1"
+                >
+                  {scrapingMatricules.has(evaluation.matricule83 || "") ? (
+                    <>Scraping...</>
+                  ) : (
+                    <>Scrape</>
+                  )}
+                </Button>
+              )}
+              {evaluation.matricule83 && (
+                <Link href={`/buildings/${evaluation.matricule83}`} className={!evaluation.scraped_at ? "" : "flex-1"}>
+                  <Button size="sm" variant={evaluation.scraped_at ? "default" : "outline"} className="w-full">
+                    View
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         ))}

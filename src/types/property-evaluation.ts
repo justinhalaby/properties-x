@@ -44,6 +44,7 @@ export interface PropertyEvaluation {
   full_address: string;
   created_at: string;
   updated_at: string;
+  scraped_at?: string | null; // From montreal_evaluation_details join
 }
 
 // Insert type (omits generated columns and timestamps)

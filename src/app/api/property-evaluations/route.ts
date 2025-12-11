@@ -113,8 +113,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Fetch scraped dates for these buildings
+    const matricules = data?.map(d => d.matricule83).filter(Boolean) || [];
+    const { data: scrapedData } = await supabase
+      .from("montreal_evaluation_details")
+      .select("matricule, scraped_at")
+      .in("matricule", matricules);
+
+    // Create a map of matricule -> scraped_at
+    const scrapedMap = new Map(
+      scrapedData?.map(d => [d.matricule, d.scraped_at]) || []
+    );
+
+    // Add scraped_at to each building
+    const dataWithScrapedAt = data?.map(building => ({
+      ...building,
+      scraped_at: scrapedMap.get(building.matricule83) || null,
+    })) || [];
+
     return NextResponse.json({
-      data,
+      data: dataWithScrapedAt,
       total: count || 0,
       page,
       limit,
