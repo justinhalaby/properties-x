@@ -45,6 +45,7 @@ export interface PropertyEvaluation {
   latitude?: number | null; // Geocoded coordinates
   longitude?: number | null;
   geocoded_at?: string | null;
+  show_on_map?: boolean; // Manually control map visibility
   created_at: string;
   updated_at: string;
   scraped_at?: string | null; // From montreal_evaluation_details join
@@ -73,6 +74,7 @@ export interface PropertyEvaluationInsert {
   latitude?: number | null; // Geocoded coordinates
   longitude?: number | null;
   geocoded_at?: string | null;
+  show_on_map?: boolean;
 }
 
 // Filter types for API

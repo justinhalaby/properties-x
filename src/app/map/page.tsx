@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { MapFiltersPanel, type MapFilters } from "@/components/map/map-filters";
 import type { Property } from "@/types/property";
 import type { PropertyEvaluation } from "@/types/property-evaluation";
 
@@ -27,17 +28,48 @@ export default function MapPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [evaluations, setEvaluations] = useState<PropertyEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<MapFilters>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [filters]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
+      // Only fetch evaluations if filters are applied
+      const hasFilters = Object.keys(filters).length > 0;
+
+      if (!hasFilters) {
+        // No filters = no evaluations shown
+        setEvaluations([]);
+        const propertiesRes = await fetch("/api/properties");
+        const propertiesData = await propertiesRes.json();
+        if (propertiesRes.ok) {
+          setProperties(propertiesData.data || []);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Build query params for evaluations
+      const params = new URLSearchParams({
+        hasCoordinates: "true",
+        limit: "10000",
+      });
+
+      if (filters.minUnits) params.append("minLogements", filters.minUnits.toString());
+      if (filters.maxUnits) params.append("maxLogements", filters.maxUnits.toString());
+      if (filters.minYear) params.append("minYear", filters.minYear.toString());
+      if (filters.maxYear) params.append("maxYear", filters.maxYear.toString());
+      if (filters.category) params.append("categorie", filters.category);
+      if (filters.search) params.append("search", filters.search);
+
       // Fetch both properties and evaluations in parallel
       const [propertiesRes, evaluationsRes] = await Promise.all([
         fetch("/api/properties"),
-        fetch("/api/property-evaluations?hasCoordinates=true&limit=1000"),
+        fetch(`/api/property-evaluations?${params.toString()}`),
       ]);
 
       const [propertiesData, evaluationsData] = await Promise.all([
@@ -61,6 +93,11 @@ export default function MapPage() {
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/properties/${property.id}`);
+  };
+
+  const handleApplyFilters = (newFilters: MapFilters) => {
+    setFilters(newFilters);
+    setFiltersOpen(false);
   };
 
   const propertiesWithLocation = properties.filter(
@@ -122,6 +159,13 @@ export default function MapPage() {
 
       {/* Map */}
       <div className="flex-1 relative">
+        {/* Filter Panel */}
+        <MapFiltersPanel
+          onApplyFilters={handleApplyFilters}
+          isOpen={filtersOpen}
+          onToggle={() => setFiltersOpen(!filtersOpen)}
+        />
+
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
             <LoadingSpinner size="lg" />
@@ -147,13 +191,21 @@ export default function MapPage() {
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <p className="text-lg mb-2">No properties with location data</p>
-            <p className="text-sm mb-4">
-              Add properties with addresses to see them on the map
+            <p className="text-lg mb-2">
+              {Object.keys(filters).length > 0
+                ? "No evaluations match your filters"
+                : "Use filters to display buildings on the map"}
             </p>
-            <Link href="/add-property">
-              <Button>Add Property</Button>
-            </Link>
+            <p className="text-sm mb-4">
+              {Object.keys(filters).length > 0
+                ? "Try adjusting your filter criteria"
+                : "Click the Filters button to select buildings by units, year, category, or address"}
+            </p>
+            {Object.keys(filters).length > 0 ? (
+              <Button onClick={() => handleApplyFilters({})}>Clear Filters</Button>
+            ) : (
+              <Button onClick={() => setFiltersOpen(true)}>Open Filters</Button>
+            )}
           </div>
         ) : (
           <PropertiesMap

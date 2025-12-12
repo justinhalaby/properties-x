@@ -25,7 +25,6 @@ export function EvaluationTable({
 }: EvaluationTableProps) {
   const [scrapingMatricules, setScrapingMatricules] = useState<Set<string>>(new Set());
   const [scrapedMatricules, setScrapedMatricules] = useState<Set<string>>(new Set());
-  const [geocodingIds, setGeocodingIds] = useState<Set<number>>(new Set());
 
   const handleScrape = async (matricule: string) => {
     setScrapingMatricules(prev => new Set(prev).add(matricule));
@@ -57,36 +56,6 @@ export function EvaluationTable({
     }
   };
 
-  const handleGeocode = async (id_uev: number) => {
-    setGeocodingIds(prev => new Set(prev).add(id_uev));
-
-    try {
-      const response = await fetch("/api/property-evaluations/geocode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_uev }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert(result.data.cached ? "Coordinates loaded from cache" : "Successfully geocoded! View on map.");
-        // Optionally refresh page to show on map
-        window.location.reload();
-      } else {
-        alert(`Failed to geocode: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Geocoding error:", error);
-      alert("Failed to geocode address");
-    } finally {
-      setGeocodingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id_uev);
-        return newSet;
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -215,21 +184,6 @@ export function EvaluationTable({
                         )}
                       </Button>
                     )}
-                    {!evaluation.latitude && !evaluation.longitude && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={geocodingIds.has(evaluation.id_uev)}
-                        onClick={() => handleGeocode(evaluation.id_uev)}
-                        className="min-w-[100px]"
-                      >
-                        {geocodingIds.has(evaluation.id_uev) ? (
-                          <>Geocoding...</>
-                        ) : (
-                          <>Add to Map</>
-                        )}
-                      </Button>
-                    )}
                     {evaluation.matricule83 && (
                       <Link href={`/buildings/${evaluation.matricule83}`}>
                         <Button size="sm" variant="secondary">
@@ -316,23 +270,8 @@ export function EvaluationTable({
                   )}
                 </Button>
               )}
-              {!evaluation.latitude && !evaluation.longitude && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={geocodingIds.has(evaluation.id_uev)}
-                  onClick={() => handleGeocode(evaluation.id_uev)}
-                  className="flex-1"
-                >
-                  {geocodingIds.has(evaluation.id_uev) ? (
-                    <>Geocoding...</>
-                  ) : (
-                    <>Add to Map</>
-                  )}
-                </Button>
-              )}
               {evaluation.matricule83 && (
-                <Link href={`/buildings/${evaluation.matricule83}`} className={!evaluation.scraped_at && !evaluation.latitude && !evaluation.longitude ? "" : "flex-1"}>
+                <Link href={`/buildings/${evaluation.matricule83}`} className={!evaluation.scraped_at ? "" : "flex-1"}>
                   <Button size="sm" variant={evaluation.scraped_at ? "default" : "outline"} className="w-full">
                     View
                   </Button>

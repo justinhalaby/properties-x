@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { geocodeAddress } from "@/lib/geocoding/nominatim";
+import { geocodeAddress } from "@/lib/geocoding/google";
 
 export async function POST(request: Request) {
   try {

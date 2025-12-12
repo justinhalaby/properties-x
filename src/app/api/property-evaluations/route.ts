@@ -109,6 +109,12 @@ export async function GET(request: Request) {
       query = query.not("latitude", "is", null).not("longitude", "is", null);
     }
 
+    // Filter: Show on map (manual selection)
+    const showOnMap = searchParams.get("showOnMap");
+    if (showOnMap === "true") {
+      query = query.eq("show_on_map", true);
+    }
+
     // Execute query with pagination
     const { data, error, count } = await query
       .range(offset, offset + limit - 1)
