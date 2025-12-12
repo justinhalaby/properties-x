@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { geocodeAddress } from "@/lib/geocoding/nominatim";
+import { geocodeAddress } from "@/lib/geocoding/google";
 
 export async function POST(request: Request) {
   try {
