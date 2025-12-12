@@ -2,15 +2,17 @@
  * Batch Geocoding Script for Property Evaluations
  *
  * This script geocodes all property evaluations in the database that don't have coordinates.
- * It respects Nominatim's rate limit of 1 request per second.
+ * It respects Google Maps API rate limit of 2000 requests per minute.
  *
  * Usage:
  *   npx tsx scripts/geocode-evaluations.ts [--limit=100] [--dry-run]
  *
  * Options:
- *   --limit=N    Only geocode N evaluations (default: all)
+ *   --limit=N    Only geocode N evaluations (default: all unprocessed)
  *   --dry-run    Don't actually update the database
- *   --continue   Continue from where it left off (skip already geocoded)
+ *
+ * The script automatically skips already geocoded entries and processes all remaining
+ * entries in batches until complete.
  */
 
 import { config } from "dotenv";
@@ -24,10 +26,9 @@ config({ path: ".env.local" });
 const args = process.argv.slice(2);
 const limit = args.find(arg => arg.startsWith("--limit="))?.split("=")[1];
 const isDryRun = args.includes("--dry-run");
-const shouldContinue = args.includes("--continue");
 
-const BATCH_SIZE = 10;
-const RATE_LIMIT_MS = 100; // Google allows 50 requests/sec, using 10/sec to be safe
+const BATCH_SIZE = 100; // Process 100 records per batch
+const RATE_LIMIT_MS = 30; // 2000 requests/minute = ~33.33 requests/sec = 30ms delay
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -59,25 +60,18 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getEvaluationsToGeocode(limit?: number): Promise<Evaluation[]> {
+async function getEvaluationsToGeocode(batchSize: number, offset: number): Promise<Evaluation[]> {
   let query = supabase
     .from("property_evaluations")
     .select("id_uev, full_address, latitude, longitude, nombre_logement");
 
-  // Only buildings with 10+ units
-  query = query.gte("nombre_logement", 10);
 
-  if (shouldContinue) {
-    query = query.is("latitude", null).is("longitude", null);
-  }
+  // Always skip already geocoded entries
+  query = query.is("latitude", null).is("longitude", null);
 
-  query = query.order("id_uev", { ascending: true });
-
-  if (limit) {
-    query = query.limit(limit);
-  } else {
-    query = query.limit(1000); // Reasonable default batch
-  }
+  query = query
+    .order("id_uev", { ascending: true })
+    .range(offset, offset + batchSize - 1);
 
   const { data, error } = await query;
 
@@ -142,73 +136,101 @@ async function main() {
     console.log("🔍 DRY RUN MODE - No changes will be made\n");
   }
 
-  // Get evaluations to geocode
-  console.log("📊 Fetching evaluations to geocode...");
-  const evaluations = await getEvaluationsToGeocode(limit ? parseInt(limit) : undefined);
+  let totalSuccessCount = 0;
+  let totalFailCount = 0;
+  let totalProcessed = 0;
+  let offset = 0;
+  let batchNumber = 1;
 
-  console.log(`   Found ${evaluations.length} evaluations to geocode\n`);
+  // If user specified a limit, use it; otherwise process all
+  const userLimit = limit ? parseInt(limit) : undefined;
 
-  if (evaluations.length === 0) {
-    console.log("✅ All evaluations already geocoded!");
-    return;
-  }
+  console.log("🚀 Starting geocoding process...");
+  console.log(`   Rate limit: ${RATE_LIMIT_MS}ms between requests (~${Math.floor(60000 / RATE_LIMIT_MS)} requests/minute)\n`);
 
-  let successCount = 0;
-  let failCount = 0;
-  let skipCount = 0;
+  while (true) {
+    // If user specified a limit, calculate remaining records to fetch
+    const recordsToFetch = userLimit
+      ? Math.min(BATCH_SIZE, userLimit - totalProcessed)
+      : BATCH_SIZE;
 
-  console.log("🚀 Starting geocoding...\n");
-
-  for (let i = 0; i < evaluations.length; i++) {
-    const evaluation = evaluations[i];
-    const progress = `[${i + 1}/${evaluations.length}]`;
-
-    // Skip if already geocoded (unless --continue flag)
-    if (evaluation.latitude && evaluation.longitude && shouldContinue) {
-      console.log(`${progress} ⏭️  Skipping (already geocoded): ${evaluation.full_address}`);
-      skipCount++;
-      continue;
+    if (userLimit && totalProcessed >= userLimit) {
+      console.log(`\n⚠️  Reached user-specified limit of ${userLimit} evaluations`);
+      break;
     }
 
-    console.log(`${progress} 🔍 Geocoding: ${evaluation.full_address}`);
+    console.log(`📊 Fetching batch ${batchNumber} (offset: ${offset})...`);
+    const evaluations = await getEvaluationsToGeocode(recordsToFetch, offset);
 
-    const coords = await geocodeEvaluation(evaluation);
+    if (evaluations.length === 0) {
+      console.log("✅ No more unprocessed evaluations found!");
+      break;
+    }
 
-    if (coords) {
-      const success = await updateEvaluationCoordinates(
-        evaluation.id_uev,
-        coords.latitude,
-        coords.longitude
-      );
+    console.log(`   Processing ${evaluations.length} evaluations\n`);
 
-      if (success) {
-        console.log(`${progress} ✅ Success: lat=${coords.latitude.toFixed(6)}, lon=${coords.longitude.toFixed(6)}`);
-        successCount++;
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < evaluations.length; i++) {
+      const evaluation = evaluations[i];
+      const globalProgress = totalProcessed + i + 1;
+      const progress = `[Batch ${batchNumber}, ${i + 1}/${evaluations.length}] [Total: ${globalProgress}]`;
+
+      console.log(`${progress} 🔍 Geocoding: ${evaluation.full_address}`);
+
+      const coords = await geocodeEvaluation(evaluation);
+
+      if (coords) {
+        const success = await updateEvaluationCoordinates(
+          evaluation.id_uev,
+          coords.latitude,
+          coords.longitude
+        );
+
+        if (success) {
+          console.log(`${progress} ✅ Success: lat=${coords.latitude.toFixed(6)}, lon=${coords.longitude.toFixed(6)}`);
+          successCount++;
+        } else {
+          failCount++;
+        }
       } else {
         failCount++;
       }
-    } else {
-      failCount++;
+
+      // Rate limiting - wait between requests
+      if (i < evaluations.length - 1 || evaluations.length === BATCH_SIZE) {
+        await sleep(RATE_LIMIT_MS);
+      }
     }
 
-    // Rate limiting - wait between requests
-    if (i < evaluations.length - 1) {
-      await sleep(RATE_LIMIT_MS);
+    totalSuccessCount += successCount;
+    totalFailCount += failCount;
+    totalProcessed += evaluations.length;
+
+    console.log(`\n   Batch ${batchNumber} Summary: ✅ ${successCount} succeeded, ❌ ${failCount} failed\n`);
+
+    // Move to next batch
+    offset += evaluations.length;
+    batchNumber++;
+
+    // If we got fewer results than requested, we've reached the end
+    if (evaluations.length < recordsToFetch) {
+      console.log("✅ Processed all available evaluations!");
+      break;
     }
   }
 
-  // Summary
-  console.log("\n📈 Geocoding Summary");
-  console.log("===================");
-  console.log(`✅ Successful: ${successCount}`);
-  console.log(`❌ Failed:     ${failCount}`);
-  if (skipCount > 0) {
-    console.log(`⏭️  Skipped:    ${skipCount}`);
-  }
-  console.log(`📊 Total:      ${evaluations.length}`);
+  // Final Summary
+  console.log("\n📈 Final Geocoding Summary");
+  console.log("==========================");
+  console.log(`✅ Successful: ${totalSuccessCount}`);
+  console.log(`❌ Failed:     ${totalFailCount}`);
+  console.log(`📊 Total:      ${totalProcessed}`);
+  console.log(`📦 Batches:    ${batchNumber - 1}`);
 
-  if (!isDryRun && successCount > 0) {
-    console.log(`\n✨ Successfully geocoded ${successCount} evaluations!`);
+  if (!isDryRun && totalSuccessCount > 0) {
+    console.log(`\n✨ Successfully geocoded ${totalSuccessCount} evaluations!`);
   }
 }
 
