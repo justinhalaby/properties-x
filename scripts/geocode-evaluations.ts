@@ -29,6 +29,9 @@ const isDryRun = args.includes("--dry-run");
 
 const BATCH_SIZE = 100; // Process 100 records per batch
 const RATE_LIMIT_MS = 30; // 2000 requests/minute = ~33.33 requests/sec = 30ms delay
+const MAX_RETRIES = 3; // Maximum number of retries per address
+const MIN_RETRY_DELAY_MS = 10000; // 10 seconds
+const MAX_RETRY_DELAY_MS = 20000; // 20 seconds
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,6 +63,10 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getRandomRetryDelay(): number {
+  return Math.floor(Math.random() * (MAX_RETRY_DELAY_MS - MIN_RETRY_DELAY_MS + 1)) + MIN_RETRY_DELAY_MS;
+}
+
 async function getEvaluationsToGeocode(batchSize: number, offset: number): Promise<Evaluation[]> {
   let query = supabase
     .from("property_evaluations")
@@ -83,22 +90,46 @@ async function getEvaluationsToGeocode(batchSize: number, offset: number): Promi
 }
 
 async function geocodeEvaluation(evaluation: Evaluation): Promise<{ latitude: number; longitude: number } | null> {
-  try {
-    const result = await geocodeAddress(evaluation.full_address);
+  let lastError: any = null;
 
-    if (!result) {
-      console.log(`   ⚠️  No results for: ${evaluation.full_address}`);
-      return null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await geocodeAddress(evaluation.full_address);
+
+      if (!result) {
+        if (attempt < MAX_RETRIES) {
+          const retryDelay = getRandomRetryDelay();
+          console.log(`   ⚠️  No results (attempt ${attempt}/${MAX_RETRIES}), retrying in ${(retryDelay/1000).toFixed(1)}s...`);
+          await sleep(retryDelay);
+          continue;
+        } else {
+          console.log(`   ⚠️  No results for: ${evaluation.full_address} (all ${MAX_RETRIES} attempts failed)`);
+          return null;
+        }
+      }
+
+      if (attempt > 1) {
+        console.log(`   ✅ Success on attempt ${attempt}/${MAX_RETRIES}`);
+      }
+
+      return {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < MAX_RETRIES) {
+        const retryDelay = getRandomRetryDelay();
+        console.log(`   ⚠️  Error (attempt ${attempt}/${MAX_RETRIES}), retrying in ${(retryDelay/1000).toFixed(1)}s...`);
+        await sleep(retryDelay);
+      } else {
+        console.error(`   ❌ Error geocoding ${evaluation.full_address} after ${MAX_RETRIES} attempts:`, error);
+      }
     }
-
-    return {
-      latitude: result.latitude,
-      longitude: result.longitude,
-    };
-  } catch (error) {
-    console.error(`   ❌ Error geocoding ${evaluation.full_address}:`, error);
-    return null;
   }
+
+  return null;
 }
 
 async function updateEvaluationCoordinates(
@@ -228,6 +259,20 @@ async function main() {
   console.log(`❌ Failed:     ${totalFailCount}`);
   console.log(`📊 Total:      ${totalProcessed}`);
   console.log(`📦 Batches:    ${batchNumber - 1}`);
+
+  // Check if there are still null records remaining
+  const { count: remainingNullCount } = await supabase
+    .from("property_evaluations")
+    .select("id_uev", { count: "exact", head: true })
+    .is("latitude", null)
+    .is("longitude", null);
+
+  if (remainingNullCount !== null && remainingNullCount > 0) {
+    console.log(`\n⚠️  Remaining records with null coordinates: ${remainingNullCount}`);
+    console.log(`   Run the script again to retry failed geocoding attempts.`);
+  } else if (remainingNullCount === 0) {
+    console.log(`\n🎉 All property evaluations have been geocoded!`);
+  }
 
   if (!isDryRun && totalSuccessCount > 0) {
     console.log(`\n✨ Successfully geocoded ${totalSuccessCount} evaluations!`);
