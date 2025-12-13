@@ -10,14 +10,17 @@
     "clean:evaluations": "tsx scripts/clean-csv.ts",
     "import:evaluations": "dotenv -e .env.local -- tsx scripts/import-evaluations.ts",
     "import:evaluations:v2": "dotenv -e .env.local -- tsx scripts/import-evaluations-v2.ts",
-    "find:missing": "dotenv -e .env.local -- tsx scripts/find-missing.ts"
+    "find:missing": "dotenv -e .env.local -- tsx scripts/find-missing.ts",
+    "scrape:zone": "dotenv -e .env.local -- tsx scripts/scrape-zone.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
+    "@types/leaflet-draw": "^1.0.13",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
     "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
     "next": "16.0.8",
     "playwright": "^1.57.0",
     "puppeteer": "^24.32.1",

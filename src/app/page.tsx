@@ -60,6 +60,12 @@ export default function Dashboard() {
                 Map View
               </Link>
               <Link
+                href="/zones"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Zones
+              </Link>
+              <Link
                 href="/buildings"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
