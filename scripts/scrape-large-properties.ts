@@ -137,14 +137,15 @@ async function scrapeProperty(matricule: string, index: number, total: number) {
 }
 
 async function main() {
+  const unitsThreshold = 30;
   console.log("\n🚀 Starting large property scraper");
-  console.log("📊 Looking for properties with 10+ units that haven't been scraped...\n");
+  console.log(`📊 Looking for properties with ${unitsThreshold}+ units that haven't been scraped...\n`);
 
   // Query for properties with 10+ units that haven't been scraped
   const { data: properties, error } = await supabase
     .from("property_evaluations")
     .select("matricule83, nombre_logement, clean_address")
-    .gte("nombre_logement", 25)
+    .gte("nombre_logement", unitsThreshold)
     .not("matricule83", "is", null)
     .limit(100);
 

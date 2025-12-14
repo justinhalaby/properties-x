@@ -17,7 +17,7 @@
 
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { geocodeAddress } from "../src/lib/geocoding/google";
+import { geocodeAddress } from "../src/lib/geocoding/nominatim";
 
 // Load environment variables from .env.local
 config({ path: ".env.local" });

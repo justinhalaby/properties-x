@@ -1,4 +1,4 @@
-import { firefox, Browser, Page } from "playwright";
+import { chromium, Browser, Page } from "playwright";
 import type { ScrapedMontrealData, TaxAccountPDF } from "@/types/montreal-evaluation";
 
 export class MontrealEvaluationScraper {
@@ -14,7 +14,7 @@ export class MontrealEvaluationScraper {
 
   async scrape(matricule: string): Promise<ScrapedMontrealData> {
     try {
-      this.browser = await firefox.launch({
+      this.browser = await chromium.launch({
         headless: false,
         slowMo: 500,
       });
@@ -47,11 +47,26 @@ export class MontrealEvaluationScraper {
 
       await page.waitForSelector('[data-test="division"] input');
 
+      // Random sleep helper for more human-like behavior
+      const randomSleep = () => {
+        return Math.floor(Math.random() * (500 - 100 + 1)) + 100;
+      };
+
       await page.locator('[data-test="division"] input').fill(division);
+      await page.waitForTimeout(randomSleep());
+
       await page.locator('[data-test="sector"] input').fill(secteur);
+      await page.waitForTimeout(randomSleep());
+
       await page.locator('[data-test="location"] input').fill(emplacement);
+      await page.waitForTimeout(randomSleep());
+
       await page.locator('[data-test="cav"] input').fill(cav);
+      await page.waitForTimeout(randomSleep());
+
       await page.locator('[data-test="building"] input').fill(batiment);
+      await page.waitForTimeout(randomSleep());
+
       await page.locator('[data-test="local"] input').fill(local);
 
       await page.waitForTimeout(1000);
