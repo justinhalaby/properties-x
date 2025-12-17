@@ -1,4 +1,4 @@
-import { chromium, Browser, Page } from "playwright";
+import { firefox, Browser, Page } from "playwright";
 import type { ScrapedMontrealData, TaxAccountPDF } from "@/types/montreal-evaluation";
 
 export class MontrealEvaluationScraper {
@@ -14,7 +14,7 @@ export class MontrealEvaluationScraper {
 
   async scrape(matricule: string): Promise<ScrapedMontrealData> {
     try {
-      this.browser = await chromium.launch({
+      this.browser = await firefox.launch({
         headless: false,
         slowMo: 500,
       });

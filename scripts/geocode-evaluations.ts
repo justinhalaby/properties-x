@@ -2,7 +2,7 @@
  * Batch Geocoding Script for Property Evaluations
  *
  * This script geocodes all property evaluations in the database that don't have coordinates.
- * It respects Google Maps API rate limit of 2000 requests per minute.
+ * It respects Nominatim's rate limit of 1 request per second.
  *
  * Usage:
  *   npx tsx scripts/geocode-evaluations.ts [--limit=100] [--dry-run]
@@ -27,11 +27,14 @@ const args = process.argv.slice(2);
 const limit = args.find(arg => arg.startsWith("--limit="))?.split("=")[1];
 const isDryRun = args.includes("--dry-run");
 
+
 const BATCH_SIZE = 100; // Process 100 records per batch
-const RATE_LIMIT_MS = 30; // 2000 requests/minute = ~33.33 requests/sec = 30ms delay
-const MAX_RETRIES = 3; // Maximum number of retries per address
+const RATE_LIMIT_MS = 1000; // Nominatim limit: 1 request per second
+const MAX_RETRIES = 1; // Maximum number of retries per address
+const MAX_QUERY_RETRIES = 5;
 const MIN_RETRY_DELAY_MS = 10000; // 10 seconds
 const MAX_RETRY_DELAY_MS = 20000; // 20 seconds
+const GEOCODING_API = "nominatim"; // API provider used for geocoding
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -40,12 +43,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (!supabaseUrl || !supabaseKey) {
   console.error("❌ Missing Supabase environment variables");
   console.error("   Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set");
-  process.exit(1);
-}
-
-if (!process.env.GOOGLE_MAPS_API_KEY) {
-  console.error("❌ Missing GOOGLE_MAPS_API_KEY environment variable");
-  console.error("   Get your API key from: https://console.cloud.google.com/apis/credentials");
   process.exit(1);
 }
 
@@ -68,25 +65,37 @@ function getRandomRetryDelay(): number {
 }
 
 async function getEvaluationsToGeocode(batchSize: number, offset: number): Promise<Evaluation[]> {
-  let query = supabase
-    .from("property_evaluations")
-    .select("id_uev, full_address, latitude, longitude, nombre_logement");
+  const MAX_QUERY_RETRIES = 5;
+  const RETRY_DELAY_MS = 10000;
 
+  for (let attempt = 1; attempt <= MAX_QUERY_RETRIES; attempt++) {
+    try {
+      const { data, error } = await supabase
+        .from("property_evaluations")
+        .select("id_uev, full_address, latitude, longitude, nombre_logement")
+        .is("latitude", null)
+        .is("longitude", null)
+        .is("geocoding_api", null)
+        .eq("categorie_uef", "Régulier")
+        .order("id_uev", { ascending: true })
+        .range(offset, offset + batchSize - 1);
 
-  // Always skip already geocoded entries
-  query = query.is("latitude", null).is("longitude", null);
+      if (error) {
+        throw new Error(error.message);
+      }
 
-  query = query
-    .order("id_uev", { ascending: true })
-    .range(offset, offset + batchSize - 1);
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(`Failed to fetch evaluations: ${error.message}`);
+      return data || [];
+    } catch (error: any) {
+      if (attempt < MAX_QUERY_RETRIES) {
+        console.warn(`   ⚠️  Failed to fetch evaluations (attempt ${attempt}/${MAX_QUERY_RETRIES}). Retrying in ${RETRY_DELAY_MS / 1000}s... Error: ${error.message}`);
+        await sleep(RETRY_DELAY_MS);
+      } else {
+        throw new Error(`Failed to fetch evaluations after ${MAX_QUERY_RETRIES} attempts: ${error.message}`);
+      }
+    }
   }
 
-  return data || [];
+  return [];
 }
 
 async function geocodeEvaluation(evaluation: Evaluation): Promise<{ latitude: number; longitude: number } | null> {
@@ -135,10 +144,11 @@ async function geocodeEvaluation(evaluation: Evaluation): Promise<{ latitude: nu
 async function updateEvaluationCoordinates(
   id_uev: number,
   latitude: number,
-  longitude: number
+  longitude: number,
+  geocodingApi: string
 ): Promise<boolean> {
   if (isDryRun) {
-    console.log(`   [DRY RUN] Would update id_uev=${id_uev} with lat=${latitude}, lon=${longitude}`);
+    console.log(`   [DRY RUN] Would update id_uev=${id_uev} with lat=${latitude}, lon=${longitude}, api=${geocodingApi}`);
     return true;
   }
 
@@ -148,11 +158,36 @@ async function updateEvaluationCoordinates(
       latitude,
       longitude,
       geocoded_at: new Date().toISOString(),
+      geocoding_api: geocodingApi,
     })
     .eq("id_uev", id_uev);
 
   if (error) {
     console.error(`   ❌ Failed to update id_uev=${id_uev}:`, error.message);
+    return false;
+  }
+
+  return true;
+}
+
+async function updateGeocodingAttempt(
+  id_uev: number,
+  geocodingApi: string
+): Promise<boolean> {
+  if (isDryRun) {
+    console.log(`   [DRY RUN] Would update id_uev=${id_uev} with failed attempt using api=${geocodingApi}`);
+    return true;
+  }
+
+  const { error } = await supabase
+    .from("property_evaluations")
+    .update({
+      geocoding_api: geocodingApi,
+    })
+    .eq("id_uev", id_uev);
+
+  if (error) {
+    console.error(`   ❌ Failed to update geocoding attempt for id_uev=${id_uev}:`, error.message);
     return false;
   }
 
@@ -216,7 +251,8 @@ async function main() {
         const success = await updateEvaluationCoordinates(
           evaluation.id_uev,
           coords.latitude,
-          coords.longitude
+          coords.longitude,
+          GEOCODING_API
         );
 
         if (success) {
@@ -226,6 +262,8 @@ async function main() {
           failCount++;
         }
       } else {
+        // Track failed geocoding attempt
+        await updateGeocodingAttempt(evaluation.id_uev, GEOCODING_API);
         failCount++;
       }
 
