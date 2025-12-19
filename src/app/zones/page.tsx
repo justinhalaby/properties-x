@@ -60,6 +60,8 @@ export default function ZonesPage() {
     name: string;
     description: string;
     targetLimit: number;
+    minUnits: number;
+    maxUnits: number | null;
   }) => {
     if (!pendingZone) return;
 
@@ -71,6 +73,8 @@ export default function ZonesPage() {
           name: data.name,
           description: data.description,
           target_limit: data.targetLimit,
+          min_units: data.minUnits,
+          max_units: data.maxUnits,
           min_lat: pendingZone.minLat,
           max_lat: pendingZone.maxLat,
           min_lng: pendingZone.minLng,

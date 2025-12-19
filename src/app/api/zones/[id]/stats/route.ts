@@ -21,8 +21,8 @@ export async function GET(
       return NextResponse.json({ error: "Zone not found" }, { status: 404 });
     }
 
-    // Count total properties
-    const { count: totalProperties } = await supabase
+    // Count total properties with unit filters
+    let totalPropertiesQuery = supabase
       .from("property_evaluations")
       .select("*", { count: "exact", head: true })
       .gte("latitude", zone.min_lat)
@@ -32,8 +32,18 @@ export async function GET(
       .not("latitude", "is", null)
       .not("longitude", "is", null);
 
-    // Get matricules in zone
-    const { data: properties } = await supabase
+    // Apply unit filters from zone configuration
+    if (zone.min_units != null) {
+      totalPropertiesQuery = totalPropertiesQuery.gte("nombre_logement", zone.min_units);
+    }
+    if (zone.max_units != null) {
+      totalPropertiesQuery = totalPropertiesQuery.lte("nombre_logement", zone.max_units);
+    }
+
+    const { count: totalProperties } = await totalPropertiesQuery;
+
+    // Get matricules in zone with unit filters
+    let propertiesQuery = supabase
       .from("property_evaluations")
       .select("matricule83")
       .gte("latitude", zone.min_lat)
@@ -42,6 +52,16 @@ export async function GET(
       .lte("longitude", zone.max_lng)
       .not("latitude", "is", null)
       .not("longitude", "is", null);
+
+    // Apply unit filters from zone configuration
+    if (zone.min_units != null) {
+      propertiesQuery = propertiesQuery.gte("nombre_logement", zone.min_units);
+    }
+    if (zone.max_units != null) {
+      propertiesQuery = propertiesQuery.lte("nombre_logement", zone.max_units);
+    }
+
+    const { data: properties } = await propertiesQuery;
 
     const matricules = properties?.map((p) => p.matricule83).filter(Boolean) || [];
 

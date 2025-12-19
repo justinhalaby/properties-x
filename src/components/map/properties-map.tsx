@@ -11,6 +11,13 @@ interface PropertiesMapProps {
   evaluations?: PropertyEvaluation[];
   className?: string;
   onPropertyClick?: (property: Property) => void;
+  highlightedMatricule?: string | null;
+  zoneBounds?: {
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  };
 }
 
 export function PropertiesMap({
@@ -18,10 +25,13 @@ export function PropertiesMap({
   evaluations = [],
   className = "",
   onPropertyClick,
+  highlightedMatricule,
+  zoneBounds,
 }: PropertiesMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const zoneBoundsRef = useRef<L.Rectangle | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -53,6 +63,32 @@ export function PropertiesMap({
       markersRef.current = null;
     };
   }, []);
+
+  // Draw zone bounds if provided
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    // Remove existing zone bounds
+    if (zoneBoundsRef.current) {
+      mapInstanceRef.current.removeLayer(zoneBoundsRef.current);
+      zoneBoundsRef.current = null;
+    }
+
+    // Draw new zone bounds if provided
+    if (zoneBounds) {
+      const bounds: L.LatLngBoundsExpression = [
+        [zoneBounds.minLat, zoneBounds.minLng],
+        [zoneBounds.maxLat, zoneBounds.maxLng],
+      ];
+
+      zoneBoundsRef.current = L.rectangle(bounds, {
+        color: "#3b82f6",
+        weight: 2,
+        fillOpacity: 0.05,
+        dashArray: "5, 5",
+      }).addTo(mapInstanceRef.current);
+    }
+  }, [zoneBounds]);
 
   // Update markers when properties or evaluations change
   useEffect(() => {
@@ -98,22 +134,23 @@ export function PropertiesMap({
     };
 
     // Create custom marker icon for evaluations
-    const createEvaluationMarkerIcon = (units: number | null) => {
+    const createEvaluationMarkerIcon = (units: number | null, isHighlighted: boolean = false) => {
       const unitsText = units != null ? `${units}u` : "?u";
 
       return L.divIcon({
         className: "custom-evaluation-marker",
         html: `
           <div style="
-            background: #10b981;
+            background: ${isHighlighted ? '#f59e0b' : '#10b981'};
             color: white;
-            padding: 4px 8px;
+            padding: ${isHighlighted ? '6px 10px' : '4px 8px'};
             border-radius: 4px;
-            font-size: 11px;
+            font-size: ${isHighlighted ? '13px' : '11px'};
             font-weight: 600;
             white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            border: 2px solid white;
+            box-shadow: 0 ${isHighlighted ? '4px 12px' : '2px 8px'} rgba(0,0,0,0.3);
+            border: ${isHighlighted ? '3px' : '2px'} solid white;
+            transform: ${isHighlighted ? 'scale(1.2)' : 'scale(1)'};
           ">${unitsText}</div>
         `,
         iconSize: [50, 24],
@@ -153,9 +190,10 @@ export function PropertiesMap({
 
     // Add markers for each evaluation
     validEvaluations.forEach((evaluation) => {
+      const isHighlighted = highlightedMatricule === evaluation.matricule83;
       const marker = L.marker(
         [evaluation.latitude!, evaluation.longitude!],
-        { icon: createEvaluationMarkerIcon(evaluation.nombre_logement) }
+        { icon: createEvaluationMarkerIcon(evaluation.nombre_logement, isHighlighted) }
       );
 
       // Create popup content
@@ -200,7 +238,7 @@ export function PropertiesMap({
       const bounds = L.latLngBounds(allCoords);
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [properties, evaluations, onPropertyClick]);
+  }, [properties, evaluations, onPropertyClick, highlightedMatricule]);
 
   return (
     <div className="relative w-full h-full">

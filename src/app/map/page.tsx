@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { MapFiltersPanel, type MapFilters } from "@/components/map/map-filters";
 import type { Property } from "@/types/property";
 import type { PropertyEvaluation } from "@/types/property-evaluation";
+import type { ScrapingZone } from "@/types/scraping-zone";
 
 // Dynamic import for Leaflet map (no SSR)
 const PropertiesMap = dynamic(
@@ -25,15 +26,72 @@ const PropertiesMap = dynamic(
 
 export default function MapPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [evaluations, setEvaluations] = useState<PropertyEvaluation[]>([]);
+  const [zoneBuildings, setZoneBuildings] = useState<PropertyEvaluation[]>([]);
+  const [zone, setZone] = useState<ScrapingZone | null>(null);
+  const [selectedPropertyMatricule, setSelectedPropertyMatricule] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<MapFilters>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    const zoneId = searchParams.get('zone');
+    const propertyMatricule = searchParams.get('property');
+
+    if (zoneId) {
+      fetchZoneData(zoneId);
+    } else if (propertyMatricule) {
+      setSelectedPropertyMatricule(propertyMatricule);
+      fetchData();
+    } else {
+      setZone(null);
+      setZoneBuildings([]);
+      setSelectedPropertyMatricule(null);
+      fetchData();
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!searchParams.get('zone')) {
+      fetchData();
+    }
   }, [filters]);
+
+  const fetchZoneData = async (zoneId: string) => {
+    setLoading(true);
+    try {
+      // Fetch zone details and buildings
+      const [zoneRes, buildingsRes] = await Promise.all([
+        fetch(`/api/zones/${zoneId}`),
+        fetch(`/api/zones/${zoneId}/properties?limit=10000`),
+      ]);
+
+      const [zoneData, buildingsData] = await Promise.all([
+        zoneRes.json(),
+        buildingsRes.json(),
+      ]);
+
+      if (zoneRes.ok) {
+        setZone(zoneData.data);
+      }
+
+      if (buildingsRes.ok) {
+        setZoneBuildings(buildingsData.data || []);
+      }
+
+      // Also check if there's a selected property
+      const propertyMatricule = searchParams.get('property');
+      if (propertyMatricule) {
+        setSelectedPropertyMatricule(propertyMatricule);
+      }
+    } catch (error) {
+      console.error("Failed to fetch zone data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -104,11 +162,16 @@ export default function MapPage() {
     (p) => p.latitude != null && p.longitude != null
   );
 
-  const evaluationsWithLocation = evaluations.filter(
-    (e) => e.latitude != null && e.longitude != null
-  );
+  const evaluationsWithLocation = zone
+    ? zoneBuildings.filter((e) => e.latitude != null && e.longitude != null)
+    : evaluations.filter((e) => e.latitude != null && e.longitude != null);
 
-  const totalOnMap = propertiesWithLocation.length + evaluationsWithLocation.length;
+  // Filter to selected property if specified
+  const displayEvaluations = selectedPropertyMatricule && !zone
+    ? evaluationsWithLocation.filter((e) => e.matricule83 === selectedPropertyMatricule)
+    : evaluationsWithLocation;
+
+  const totalOnMap = propertiesWithLocation.length + displayEvaluations.length;
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -149,17 +212,50 @@ export default function MapPage() {
 
       {/* Map Stats Bar */}
       <div className="border-b border-border bg-card px-4 py-2 flex-shrink-0">
-        <div className="container mx-auto flex items-center gap-4 text-sm">
-          <span className="text-muted-foreground">
-            Showing{" "}
-            <span className="text-foreground font-medium">
-              {totalOnMap.toLocaleString()}
-            </span>{" "}
-            locations on map
-          </span>
-          <span className="text-muted-foreground">
-            ({propertiesWithLocation.length} properties, {evaluationsWithLocation.length} evaluations)
-          </span>
+        <div className="container mx-auto flex items-center justify-between text-sm">
+          <div className="flex items-center gap-4">
+            {zone ? (
+              <>
+                <span className="text-muted-foreground">
+                  Zone:{" "}
+                  <span className="text-foreground font-medium">{zone.name}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  Showing{" "}
+                  <span className="text-foreground font-medium">
+                    {displayEvaluations.length.toLocaleString()}
+                  </span>{" "}
+                  {selectedPropertyMatricule ? "selected building" : "buildings"}
+                </span>
+              </>
+            ) : selectedPropertyMatricule ? (
+              <span className="text-muted-foreground">
+                Showing selected building
+              </span>
+            ) : (
+              <>
+                <span className="text-muted-foreground">
+                  Showing{" "}
+                  <span className="text-foreground font-medium">
+                    {totalOnMap.toLocaleString()}
+                  </span>{" "}
+                  locations on map
+                </span>
+                <span className="text-muted-foreground">
+                  ({propertiesWithLocation.length} properties, {displayEvaluations.length} evaluations)
+                </span>
+              </>
+            )}
+          </div>
+          {(zone || selectedPropertyMatricule) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/map')}
+            >
+              Clear Selection
+            </Button>
+          )}
         </div>
       </div>
 
@@ -215,9 +311,16 @@ export default function MapPage() {
           </div>
         ) : (
           <PropertiesMap
-            properties={propertiesWithLocation}
-            evaluations={evaluationsWithLocation}
+            properties={zone ? [] : propertiesWithLocation}
+            evaluations={displayEvaluations}
             onPropertyClick={handlePropertyClick}
+            highlightedMatricule={selectedPropertyMatricule}
+            zoneBounds={zone ? {
+              minLat: zone.min_lat,
+              maxLat: zone.max_lat,
+              minLng: zone.min_lng,
+              maxLng: zone.max_lng,
+            } : undefined}
           />
         )}
       </div>

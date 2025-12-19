@@ -14,6 +14,8 @@ export interface ScrapingZone {
   scraped_count: number;
   last_scraped_at: string | null;
   target_limit: number | null;
+  min_units: number;
+  max_units: number | null;
 }
 
 export interface ScrapingZoneInsert {
@@ -24,6 +26,8 @@ export interface ScrapingZoneInsert {
   min_lng: number;
   max_lng: number;
   target_limit?: number;
+  min_units?: number;
+  max_units?: number | null;
   total_properties?: number;
   scraped_count?: number;
 }
@@ -36,6 +40,8 @@ export interface ScrapingZoneUpdate {
   min_lng?: number;
   max_lng?: number;
   target_limit?: number;
+  min_units?: number;
+  max_units?: number | null;
   total_properties?: number;
   scraped_count?: number;
   last_scraped_at?: string;

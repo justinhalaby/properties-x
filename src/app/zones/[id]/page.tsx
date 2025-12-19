@@ -3,10 +3,16 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { ScrapingZone } from "@/types/scraping-zone";
+
+const ZoneBuildingsMap = dynamic(
+  () => import("@/components/map/zone-buildings-map").then((mod) => ({ default: mod.ZoneBuildingsMap })),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><p>Loading map...</p></div> }
+);
 
 export default function ZoneDetailPage({
   params,
@@ -22,6 +28,8 @@ export default function ZoneDetailPage({
   const [properties, setProperties] = useState<any[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [showOnlyUnscraped, setShowOnlyUnscraped] = useState(false);
+  const [scrapingMatricule, setScrapingMatricule] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   useEffect(() => {
     fetchZoneDetails();
@@ -103,6 +111,38 @@ export default function ZoneDetailPage({
     }
   };
 
+  const handleScrapeSingle = async (matricule: string) => {
+    if (!confirm("Scrape this building now? This will take about 2-3 seconds.")) {
+      return;
+    }
+
+    setScrapingMatricule(matricule);
+    try {
+      const res = await fetch(`/api/zones/${resolvedParams.id}/scrape-single`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matricule }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Successfully scraped!\n\nAddress: ${data.data.address}\nUnits: ${data.data.units}\nValue: ${data.data.value}`);
+        await Promise.all([fetchZoneDetails(), fetchProperties()]);
+      } else if (data.already_scraped) {
+        alert("This building has already been scraped.");
+        await fetchProperties();
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to scrape building:", error);
+      alert("Failed to scrape building. Please try again.");
+    } finally {
+      setScrapingMatricule(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -144,11 +184,19 @@ export default function ZoneDetailPage({
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{zone.name}</h1>
-          {zone.description && (
-            <p className="text-muted-foreground">{zone.description}</p>
-          )}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{zone.name}</h1>
+            {zone.description && (
+              <p className="text-muted-foreground">{zone.description}</p>
+            )}
+          </div>
+          <Button
+            onClick={() => router.push(`/map?zone=${zone.id}`)}
+            variant="outline"
+          >
+            View Zone on Map
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -249,7 +297,7 @@ export default function ZoneDetailPage({
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold">Buildings in Zone</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
                   type="checkbox"
@@ -259,6 +307,13 @@ export default function ZoneDetailPage({
                 />
                 <span>Show only unscraped</span>
               </label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
+              >
+                {viewMode === 'list' ? 'Map View' : 'List View'}
+              </Button>
             </div>
           </div>
 
@@ -272,11 +327,27 @@ export default function ZoneDetailPage({
                 ? "No unscraped buildings found in this zone"
                 : "No buildings found in this zone"}
             </div>
+          ) : viewMode === 'map' ? (
+            <div className="h-[600px] border border-border rounded-lg overflow-hidden">
+              <ZoneBuildingsMap
+                zone={zone}
+                properties={properties}
+                onPropertyClick={(property) => {
+                  // Scroll to property in list
+                  setViewMode('list');
+                  setTimeout(() => {
+                    const element = document.getElementById(`property-${property.matricule83}`);
+                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
+                }}
+              />
+            </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {properties.map((property, index) => (
                 <div
                   key={property.matricule83 || index}
+                  id={`property-${property.matricule83}`}
                   className="border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
@@ -314,16 +385,34 @@ export default function ZoneDetailPage({
                         </div>
                       )}
                     </div>
-                    <div className="ml-4">
+                    <div className="ml-4 flex flex-col gap-2">
                       {property.is_scraped ? (
-                        <span className="px-2 py-1 bg-green-600/20 text-green-600 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-green-600/20 text-green-600 text-xs rounded-full text-center">
                           Scraped
                         </span>
                       ) : (
-                        <span className="px-2 py-1 bg-yellow-600/20 text-yellow-600 text-xs rounded-full">
-                          Not scraped
-                        </span>
+                        <>
+                          <span className="px-2 py-1 bg-yellow-600/20 text-yellow-600 text-xs rounded-full text-center">
+                            Not scraped
+                          </span>
+                          <Button
+                            size="sm"
+                            onClick={() => handleScrapeSingle(property.matricule83)}
+                            disabled={scrapingMatricule === property.matricule83}
+                            className="text-xs"
+                          >
+                            {scrapingMatricule === property.matricule83 ? "Scraping..." : "Scrape Now"}
+                          </Button>
+                        </>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => router.push(`/map?zone=${zone.id}&property=${property.matricule83}`)}
+                        className="text-xs"
+                      >
+                        View on Map
+                      </Button>
                     </div>
                   </div>
                 </div>

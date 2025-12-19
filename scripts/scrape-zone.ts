@@ -11,13 +11,15 @@ const args = process.argv.slice(2);
 const zoneIdArg = args.find((arg) => arg.startsWith("--zone-id="));
 const jobIdArg = args.find((arg) => arg.startsWith("--job-id="));
 const limitArg = args.find((arg) => arg.startsWith("--limit="));
+const minUnitsArg = args.find((arg) => arg.startsWith("--min-units="));
 
 const zoneId = zoneIdArg?.split("=")[1];
 const jobId = jobIdArg?.split("=")[1];
 const limit = limitArg ? parseInt(limitArg.split("=")[1]) : null;
+const minUnits = minUnitsArg ? parseInt(minUnitsArg.split("=")[1]) : 3;
 
 if (!zoneId && !jobId) {
-  console.error("Usage: npm run scrape:zone -- --zone-id=<zone-id> [--limit=50]");
+  console.error("Usage: npm run scrape:zone -- --zone-id=<zone-id> [--limit=50] [--min-units=3]");
   console.error("   OR: npm run scrape:zone -- --job-id=<job-id>");
   process.exit(1);
 }
@@ -186,10 +188,11 @@ async function main() {
   }
 
   console.log(`📋 Zone: ${zone.name}`);
-  console.log(`📊 Bounds: Lat ${zone.min_lat} to ${zone.max_lat}, Lng ${zone.min_lng} to ${zone.max_lng}\n`);
+  console.log(`📊 Bounds: Lat ${zone.min_lat} to ${zone.max_lat}, Lng ${zone.min_lng} to ${zone.max_lng}`);
+  console.log(`🏢 Unit Filter: ${zone.min_units || 0}${zone.max_units ? ` to ${zone.max_units}` : '+'} units\n`);
 
-  // Get properties in zone
-  const { data: properties } = await supabase
+  // Get properties in zone with unit filters
+  let propertiesQuery = supabase
     .from("property_evaluations")
     .select("matricule83, clean_address, nombre_logement")
     .gte("latitude", zone.min_lat)
@@ -198,6 +201,16 @@ async function main() {
     .lte("longitude", zone.max_lng)
     .not("latitude", "is", null)
     .not("longitude", "is", null);
+
+  // Apply unit filters from zone configuration
+  if (zone.min_units != null) {
+    propertiesQuery = propertiesQuery.gte("nombre_logement", zone.min_units);
+  }
+  if (zone.max_units != null) {
+    propertiesQuery = propertiesQuery.lte("nombre_logement", zone.max_units);
+  }
+
+  const { data: properties } = await propertiesQuery;
 
   if (!properties || properties.length === 0) {
     console.log("✅ No properties found in zone");

@@ -7,7 +7,13 @@ import type { ZoneBounds } from "@/types/scraping-zone";
 
 interface ZoneCreationModalProps {
   bounds: ZoneBounds;
-  onSave: (data: { name: string; description: string; targetLimit: number }) => Promise<void>;
+  onSave: (data: {
+    name: string;
+    description: string;
+    targetLimit: number;
+    minUnits: number;
+    maxUnits: number | null;
+  }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -19,13 +25,21 @@ export function ZoneCreationModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [targetLimit, setTargetLimit] = useState(50);
+  const [minUnits, setMinUnits] = useState(3);
+  const [maxUnits, setMaxUnits] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave({ name, description, targetLimit });
+      await onSave({
+        name,
+        description,
+        targetLimit,
+        minUnits,
+        maxUnits: maxUnits === "" ? null : parseInt(maxUnits),
+      });
     } finally {
       setLoading(false);
     }
@@ -73,6 +87,40 @@ export function ZoneCreationModal({
             <p className="text-xs text-muted-foreground mt-1">
               Max properties to scrape per run (can be changed later)
             </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Min Units
+              </label>
+              <Input
+                type="number"
+                value={minUnits}
+                onChange={(e) => setMinUnits(parseInt(e.target.value) || 0)}
+                min={0}
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum units per building
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Max Units
+              </label>
+              <Input
+                type="number"
+                value={maxUnits}
+                onChange={(e) => setMaxUnits(e.target.value)}
+                min={minUnits}
+                placeholder="No limit"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Maximum units (optional)
+              </p>
+            </div>
           </div>
 
           <div className="bg-secondary p-3 rounded text-sm">

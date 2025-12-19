@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const body = await request.json();
 
-    const { name, description, min_lat, max_lat, min_lng, max_lng, target_limit } = body;
+    const { name, description, min_lat, max_lat, min_lng, max_lng, target_limit, min_units, max_units } = body;
 
     // Validate required fields
     if (!name || min_lat == null || max_lat == null || min_lng == null || max_lng == null) {
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Count properties within bounds
-    const { count: totalProperties } = await supabase
+    // Build query for counting properties within bounds with unit filters
+    let propertiesQuery = supabase
       .from("property_evaluations")
       .select("*", { count: "exact", head: true })
       .gte("latitude", min_lat)
@@ -54,8 +54,18 @@ export async function POST(request: Request) {
       .not("latitude", "is", null)
       .not("longitude", "is", null);
 
-    // Count already scraped properties
-    const { data: evaluationsInZone } = await supabase
+    // Apply unit filters
+    if (min_units != null) {
+      propertiesQuery = propertiesQuery.gte("nombre_logement", min_units);
+    }
+    if (max_units != null) {
+      propertiesQuery = propertiesQuery.lte("nombre_logement", max_units);
+    }
+
+    const { count: totalProperties } = await propertiesQuery;
+
+    // Count already scraped properties with same filters
+    let evaluationsQuery = supabase
       .from("property_evaluations")
       .select("matricule83")
       .gte("latitude", min_lat)
@@ -64,6 +74,16 @@ export async function POST(request: Request) {
       .lte("longitude", max_lng)
       .not("latitude", "is", null)
       .not("longitude", "is", null);
+
+    // Apply unit filters
+    if (min_units != null) {
+      evaluationsQuery = evaluationsQuery.gte("nombre_logement", min_units);
+    }
+    if (max_units != null) {
+      evaluationsQuery = evaluationsQuery.lte("nombre_logement", max_units);
+    }
+
+    const { data: evaluationsInZone } = await evaluationsQuery;
 
     const matricules = evaluationsInZone?.map((e) => e.matricule83).filter(Boolean) || [];
 
@@ -85,6 +105,8 @@ export async function POST(request: Request) {
       min_lng,
       max_lng,
       target_limit: target_limit || null,
+      min_units: min_units != null ? min_units : 3,
+      max_units: max_units || null,
       total_properties: totalProperties || 0,
       scraped_count: scrapedCount,
     };

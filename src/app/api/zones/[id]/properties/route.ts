@@ -26,7 +26,7 @@ export async function GET(
     const onlyUnscraped = searchParams.get("onlyUnscraped") === "true";
     const limit = parseInt(searchParams.get("limit") || "100");
 
-    // Get properties within zone bounds
+    // Get properties within zone bounds with unit filters
     let query = supabase
       .from("property_evaluations")
       .select("*")
@@ -37,6 +37,14 @@ export async function GET(
       .not("latitude", "is", null)
       .not("longitude", "is", null)
       .limit(limit);
+
+    // Apply unit filters from zone configuration
+    if (zone.min_units != null) {
+      query = query.gte("nombre_logement", zone.min_units);
+    }
+    if (zone.max_units != null) {
+      query = query.lte("nombre_logement", zone.max_units);
+    }
 
     const { data: properties, error } = await query;
 

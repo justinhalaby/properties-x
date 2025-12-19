@@ -17,7 +17,7 @@
 
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { geocodeAddress } from "../src/lib/geocoding/nominatim";
+import { geocodeAddress } from "../src/lib/geocoding/google";
 
 // Load environment variables from .env.local
 config({ path: ".env.local" });
@@ -34,7 +34,7 @@ const MAX_RETRIES = 1; // Maximum number of retries per address
 const MAX_QUERY_RETRIES = 5;
 const MIN_RETRY_DELAY_MS = 10000; // 10 seconds
 const MAX_RETRY_DELAY_MS = 20000; // 20 seconds
-const GEOCODING_API = "nominatim"; // API provider used for geocoding
+const GEOCODING_API = "google"; // API provider used for geocoding
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -75,9 +75,8 @@ async function getEvaluationsToGeocode(batchSize: number, offset: number): Promi
         .select("id_uev, full_address, latitude, longitude, nombre_logement")
         .is("latitude", null)
         .is("longitude", null)
-        .is("geocoding_api", null)
         .eq("categorie_uef", "Régulier")
-        .gt("nombre_logement", 2)
+        .gte("nombre_logement", 10)
         .order("id_uev", { ascending: true })
         .range(offset, offset + batchSize - 1);
 
