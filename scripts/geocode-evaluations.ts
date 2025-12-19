@@ -75,7 +75,6 @@ async function getEvaluationsToGeocode(batchSize: number, offset: number): Promi
         .select("id_uev, full_address, latitude, longitude, nombre_logement")
         .is("latitude", null)
         .is("longitude", null)
-        .eq("categorie_uef", "Régulier")
         .gte("nombre_logement", 10)
         .order("id_uev", { ascending: true })
         .range(offset, offset + batchSize - 1);

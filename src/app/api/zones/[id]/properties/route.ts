@@ -24,7 +24,7 @@ export async function GET(
 
     // Query parameters
     const onlyUnscraped = searchParams.get("onlyUnscraped") === "true";
-    const limit = parseInt(searchParams.get("limit") || "100");
+    const limit = Math.min(parseInt(searchParams.get("limit") || "100"), 10000);
 
     // Get properties within zone bounds with unit filters
     let query = supabase

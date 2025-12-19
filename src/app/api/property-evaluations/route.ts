@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     // Pagination
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100); // Max 100
+    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 10000); // Max 10000 for map views
     const offset = (page - 1) * limit;
 
     // Build query

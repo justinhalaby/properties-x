@@ -11,6 +11,7 @@ interface PropertiesMapProps {
   evaluations?: PropertyEvaluation[];
   className?: string;
   onPropertyClick?: (property: Property) => void;
+  onScrapeSingle?: (matricule: string) => Promise<any>;
   highlightedMatricule?: string | null;
   zoneBounds?: {
     minLat: number;
@@ -25,6 +26,7 @@ export function PropertiesMap({
   evaluations = [],
   className = "",
   onPropertyClick,
+  onScrapeSingle,
   highlightedMatricule,
   zoneBounds,
 }: PropertiesMapProps) {
@@ -196,6 +198,15 @@ export function PropertiesMap({
         { icon: createEvaluationMarkerIcon(evaluation.nombre_logement, isHighlighted) }
       );
 
+      // Format scraped date if available
+      const scrapedDate = (evaluation as any).scraped_at
+        ? new Date((evaluation as any).scraped_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        : null;
+
       // Create popup content
       const popupContent = `
         <div style="min-width: 200px;">
@@ -207,11 +218,42 @@ export function PropertiesMap({
             <div><strong>Floors:</strong> ${evaluation.etage_hors_sol ?? "N/A"}</div>
             ${evaluation.superficie_terrain ? `<div><strong>Land:</strong> ${evaluation.superficie_terrain.toLocaleString()} m²</div>` : ""}
           </div>
+          ${(evaluation as any).is_scraped
+            ? `<div style="
+                margin-top: 8px;
+                padding: 6px 12px;
+                background: #10b981;
+                color: white;
+                border-radius: 4px;
+                font-size: 11px;
+                text-align: center;
+              ">
+                ✓ Scraped ${scrapedDate ? `on ${scrapedDate}` : ''}
+              </div>`
+            : `<button
+                data-matricule="${evaluation.matricule83}"
+                class="scrape-button"
+                style="
+                  display: block;
+                  width: 100%;
+                  margin-top: 8px;
+                  padding: 6px 12px;
+                  background: #3b82f6;
+                  color: white;
+                  border: none;
+                  border-radius: 4px;
+                  font-size: 12px;
+                  font-weight: 600;
+                  cursor: pointer;
+                "
+              >Scrape Now</button>`
+          }
           <a
             href="/buildings/${evaluation.matricule83}"
             style="
               display: inline-block;
               margin-top: 8px;
+              width: 100%;
               padding: 4px 12px;
               background: #10b981;
               color: white;
@@ -219,12 +261,37 @@ export function PropertiesMap({
               text-decoration: none;
               font-size: 12px;
               font-weight: 600;
+              text-align: center;
+              box-sizing: border-box;
             "
           >View Details</a>
         </div>
       `;
 
       marker.bindPopup(popupContent);
+
+      // Add click handler for scrape button
+      marker.on('popupopen', () => {
+        const scrapeButton = document.querySelector(`button[data-matricule="${evaluation.matricule83}"]`);
+        if (scrapeButton && onScrapeSingle) {
+          scrapeButton.addEventListener('click', async () => {
+            scrapeButton.textContent = 'Scraping...';
+            (scrapeButton as HTMLButtonElement).disabled = true;
+
+            const result = await onScrapeSingle(evaluation.matricule83);
+
+            if (result.success) {
+              scrapeButton.textContent = '✓ Scraped!';
+            } else if (result.already_scraped) {
+              scrapeButton.textContent = 'Already Scraped';
+            } else {
+              scrapeButton.textContent = 'Failed - Try Again';
+              (scrapeButton as HTMLButtonElement).disabled = false;
+            }
+          });
+        }
+      });
+
       marker.addTo(markersRef.current!);
     });
 
@@ -238,7 +305,7 @@ export function PropertiesMap({
       const bounds = L.latLngBounds(allCoords);
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [properties, evaluations, onPropertyClick, highlightedMatricule]);
+  }, [properties, evaluations, onPropertyClick, onScrapeSingle, highlightedMatricule]);
 
   return (
     <div className="relative w-full h-full">

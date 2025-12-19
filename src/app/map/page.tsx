@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { MapFiltersPanel, type MapFilters } from "@/components/map/map-filters";
+import { createClient } from "@/lib/supabase/client";
 import type { Property } from "@/types/property";
 import type { PropertyEvaluation } from "@/types/property-evaluation";
 import type { ScrapingZone } from "@/types/scraping-zone";
@@ -78,7 +79,9 @@ export default function MapPage() {
       }
 
       if (buildingsRes.ok) {
-        setZoneBuildings(buildingsData.data || []);
+        // Zone buildings already have is_scraped from the API, but we need scraped_at
+        const enriched = await enrichEvaluationsWithScrapedStatus(buildingsData.data || []);
+        setZoneBuildings(enriched);
       }
 
       // Also check if there's a selected property
@@ -91,6 +94,32 @@ export default function MapPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const enrichEvaluationsWithScrapedStatus = async (evaluations: PropertyEvaluation[]) => {
+    if (evaluations.length === 0) return evaluations;
+
+    const supabase = await createClient();
+    const matricules = evaluations.map((e) => e.matricule83).filter(Boolean);
+
+    if (matricules.length === 0) return evaluations;
+
+    // Fetch scraped details
+    const { data: scrapedDetails } = await supabase
+      .from("montreal_evaluation_details")
+      .select("matricule, created_at")
+      .in("matricule", matricules);
+
+    const scrapedMap = new Map(
+      scrapedDetails?.map((s) => [s.matricule, s.created_at]) || []
+    );
+
+    // Add scraped status to evaluations
+    return evaluations.map((e) => ({
+      ...e,
+      is_scraped: scrapedMap.has(e.matricule83),
+      scraped_at: scrapedMap.get(e.matricule83) || null,
+    }));
   };
 
   const fetchData = async () => {
@@ -140,7 +169,8 @@ export default function MapPage() {
       }
 
       if (evaluationsRes.ok) {
-        setEvaluations(evaluationsData.data || []);
+        const enriched = await enrichEvaluationsWithScrapedStatus(evaluationsData.data || []);
+        setEvaluations(enriched);
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -151,6 +181,34 @@ export default function MapPage() {
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/properties/${property.id}`);
+  };
+
+  const handleScrapeSingle = async (matricule: string) => {
+    try {
+      const res = await fetch(`/api/property-evaluations/${matricule}/scrape`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Refresh the data to show updated scrape status
+        const zoneId = searchParams.get('zone');
+        if (zoneId) {
+          await fetchZoneData(zoneId);
+        } else {
+          await fetchData();
+        }
+        return { success: true, data: data.data };
+      } else if (data.already_scraped) {
+        return { success: false, already_scraped: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error("Failed to scrape building:", error);
+      return { success: false, error: "Failed to scrape building" };
+    }
   };
 
   const handleApplyFilters = (newFilters: MapFilters) => {
@@ -314,6 +372,7 @@ export default function MapPage() {
             properties={zone ? [] : propertiesWithLocation}
             evaluations={displayEvaluations}
             onPropertyClick={handlePropertyClick}
+            onScrapeSingle={handleScrapeSingle}
             highlightedMatricule={selectedPropertyMatricule}
             zoneBounds={zone ? {
               minLat: zone.min_lat,
