@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { MontrealEvaluationScraper } from "@/lib/scrapers/montreal-evaluation-scraper";
+import { MontrealEvaluationScraper, type ScrapeOptions } from "@/lib/scrapers/montreal-evaluation-scraper";
 import type { MontrealEvaluationInsert } from "@/types/montreal-evaluation";
+import { isValidForAddressScraping } from "@/lib/utils/street-name-cleaner";
 
 // Helper function to parse French-formatted numbers (with spaces)
 function parseNumber(value: string | null | undefined): number | null {
@@ -12,47 +13,116 @@ function parseNumber(value: string | null | undefined): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
+// Request body interface
+interface PostRequestBody {
+  // Support both methods
+  method?: 'matricule' | 'address';
+
+  // For matricule method
+  matricule?: string;
+
+  // For address method
+  streetNumber?: number;
+  streetName?: string;
+
+  // Or auto-detect from property_evaluations
+  propertyEvaluationId?: number; // id_uev from property_evaluations
+}
+
 export async function POST(request: Request) {
   try {
-    const { matricule } = await request.json();
-
-    if (!matricule) {
-      return NextResponse.json(
-        { error: "Matricule is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate matricule format (should be XXXX-XX-XXXX-X-XXX-XXXX)
-    const matriculeRegex = /^\d{4}-\d{2}-\d{4}-\d{1}-\d{3}-\d{4}$/;
-    if (!matriculeRegex.test(matricule)) {
-      return NextResponse.json(
-        { error: "Invalid matricule format. Expected: XXXX-XX-XXXX-X-XXX-XXXX" },
-        { status: 400 }
-      );
-    }
+    const body: PostRequestBody = await request.json();
+    const {
+      method = 'address', // Default to address
+      matricule,
+      streetNumber,
+      streetName,
+      propertyEvaluationId
+    } = body;
 
     const supabase = await createClient();
+    let scrapeParams: ScrapeOptions;
 
-    // Check if already scraped
-    const { data: existing } = await supabase
-      .from("montreal_evaluation_details")
-      .select("*")
-      .eq("matricule", matricule)
-      .single();
+    // Determine scraping method
+    if (propertyEvaluationId) {
+      // Fetch from property_evaluations and auto-generate scrape params
+      const { data: property, error: fetchError } = await supabase
+        .from("property_evaluations")
+        .select("matricule83, civique_debut, clean_street_name")
+        .eq("id_uev", propertyEvaluationId)
+        .single();
 
-    if (existing) {
-      return NextResponse.json({
-        data: existing,
-        fromCache: true,
-        message: "Data already exists in database",
-      });
+      if (fetchError || !property) {
+        return NextResponse.json(
+          { error: "Property not found" },
+          { status: 404 }
+        );
+      }
+
+      // Use address method if data is valid, otherwise fall back to matricule
+      if (isValidForAddressScraping(property.civique_debut, property.clean_street_name)) {
+        scrapeParams = {
+          method: 'address',
+          address: {
+            streetNumber: property.civique_debut!,
+            streetName: property.clean_street_name!
+          }
+        };
+      } else {
+        scrapeParams = {
+          method: 'matricule',
+          matricule: property.matricule83
+        };
+      }
+    } else if (method === 'address' && streetNumber && streetName) {
+      // Direct address-based scraping
+      scrapeParams = {
+        method: 'address',
+        address: { streetNumber, streetName }
+      };
+    } else if (method === 'matricule' && matricule) {
+      // Direct matricule-based scraping
+      scrapeParams = {
+        method: 'matricule',
+        matricule
+      };
+    } else {
+      return NextResponse.json(
+        { error: "Invalid parameters for scraping method" },
+        { status: 400 }
+      );
+    }
+
+    // Validate matricule format if using matricule method
+    if (scrapeParams.method === 'matricule') {
+      const matriculeRegex = /^\d{4}-\d{2}-\d{4}-\d{1}-\d{3}-\d{4}$/;
+      if (!matriculeRegex.test(scrapeParams.matricule!)) {
+        return NextResponse.json(
+          { error: "Invalid matricule format. Expected: XXXX-XX-XXXX-X-XXX-XXXX" },
+          { status: 400 }
+        );
+      }
+
+      // Check if already scraped
+      const { data: existing } = await supabase
+        .from("montreal_evaluation_details")
+        .select("*")
+        .eq("matricule", scrapeParams.matricule)
+        .single();
+
+      if (existing) {
+        return NextResponse.json({
+          data: existing,
+          fromCache: true,
+          message: "Data already exists in database",
+        });
+      }
     }
 
     // Scrape the data
-    console.log(`Starting scrape for matricule: ${matricule}`);
+    console.log(`Starting scrape with method: ${scrapeParams.method}`);
     const scraper = new MontrealEvaluationScraper();
-    const scrapedData = await scraper.scrape(matricule);
+    const scrapedData = await scraper.scrape(scrapeParams);
 
     // Transform scraped data to database format
     const insertData: MontrealEvaluationInsert = {
@@ -130,6 +200,8 @@ export async function POST(request: Request) {
       data: inserted,
       fromCache: false,
       message: "Successfully scraped and saved data",
+      searchMethod: scrapedData.searchMethod,
+      hadMultipleResults: scrapedData.multipleResultsInfo?.hasMultiple || false,
     });
 
   } catch (error) {

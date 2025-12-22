@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { MontrealEvaluationScraper } from "@/lib/scrapers/montreal-evaluation-scraper";
+import { MontrealEvaluationScraper, type ScrapeOptions } from "@/lib/scrapers/montreal-evaluation-scraper";
 import type { MontrealEvaluationInsert } from "@/types/montreal-evaluation";
 
 // Helper function to parse French-formatted numbers (with spaces)
@@ -16,8 +16,14 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔍 POST /api/property-evaluations/[id]/scrape called');
+  debugger; // First breakpoint - route is being called
+
   try {
     const { id: matricule } = await params;
+    console.log('📋 Matricule from params:', matricule);
+    debugger; // Second breakpoint - got matricule
+
     const supabase = await createClient();
 
     if (!matricule) {
@@ -27,27 +33,89 @@ export async function POST(
       );
     }
 
-    // Check if already scraped
-    const { data: existing } = await supabase
-      .from("montreal_evaluation_details")
-      .select("matricule, created_at")
-      .eq("matricule", matricule)
+    // Fetch property data for address-based scraping
+    console.log('🔎 Fetching property from database...');
+    console.log('🔎 Looking for matricule83:', matricule);
+
+    const { data: property, error: fetchError } = await supabase
+      .from("property_evaluations")
+      .select("matricule83, civique_debut, clean_street_name, nom_rue")
+      .eq("matricule83", matricule)
       .single();
 
-    if (existing) {
+    console.log('📦 Supabase response:', { property, error: fetchError });
+    debugger; // Third breakpoint - got property data
+
+    if (fetchError) {
+      console.error('❌ Supabase error:', fetchError);
       return NextResponse.json(
         {
-          error: "Building already scraped",
-          already_scraped: true,
-          scraped_at: existing.created_at
+          error: "Database query failed",
+          details: fetchError
         },
-        { status: 409 }
+        { status: 500 }
       );
     }
 
+    if (!property) {
+      console.error('❌ Property not found for matricule:', matricule);
+
+      // Try to find similar matricules for debugging
+      const { data: similar } = await supabase
+        .from("property_evaluations")
+        .select("matricule83")
+        .ilike("matricule83", `%${matricule.slice(0, 10)}%`)
+        .limit(5);
+
+      console.log('🔍 Similar matricules found:', similar);
+
+      return NextResponse.json(
+        {
+          error: "Property not found in database",
+          searched_for: matricule,
+          similar_matricules: similar
+        },
+        { status: 404 }
+      );
+    }
+
+    if (!property.civique_debut || !property.clean_street_name) {
+      console.error('❌ Property missing required fields');
+      debugger; // Missing fields breakpoint
+      return NextResponse.json(
+        {
+          error: "Property missing required data for address-based scraping",
+          details: {
+            has_civique_debut: !!property.civique_debut,
+            has_clean_street_name: !!property.clean_street_name
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Always use address-based scraping with known matricule
+    console.log(`✅ Using address-based scraping: ${property.civique_debut} ${property.clean_street_name}`);
+    const scrapeParams: ScrapeOptions = {
+      method: 'address',
+      matricule: matricule, // Pass the known matricule
+      address: {
+        streetNumber: property.civique_debut,
+        streetName: property.clean_street_name
+      }
+    };
+
+    console.log('🤖 Starting scraper...');
+
+
     // Scrape the data
     const scraper = new MontrealEvaluationScraper();
-    const scrapedData = await scraper.scrape(matricule);
+    const scrapedData = await scraper.scrape(scrapeParams);
+
+    console.log('✅ Scraping completed successfully');
+
+
+    console.log(`Scraping completed. Method: ${scrapedData.searchMethod}, Matricule: ${scrapedData.matricule}`);
 
     // Transform scraped data to database format
     const insertData: MontrealEvaluationInsert = {
@@ -89,6 +157,7 @@ export async function POST(
     };
 
     // Insert into database
+    console.log(`Inserting data for matricule: ${insertData.matricule}`);
     const { data: inserted, error: insertError } = await supabase
       .from("montreal_evaluation_details")
       .insert(insertData)
@@ -97,11 +166,14 @@ export async function POST(
 
     if (insertError) {
       console.error(`Database insert error:`, insertError);
+      console.error(`Insert data:`, JSON.stringify(insertData, null, 2));
       return NextResponse.json(
-        { error: insertError.message },
+        { error: insertError.message, details: insertError },
         { status: 500 }
       );
     }
+
+    console.log(`Successfully inserted data for matricule: ${insertData.matricule}`);
 
     return NextResponse.json({
       success: true,
@@ -111,6 +183,7 @@ export async function POST(
         units: scrapedData.building.units,
         value: scrapedData.valuation.current.total_value,
         scraped_at: inserted.created_at,
+        search_method: scrapedData.searchMethod,
       },
     });
   } catch (error) {

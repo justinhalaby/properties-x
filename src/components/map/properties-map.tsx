@@ -136,14 +136,28 @@ export function PropertiesMap({
     };
 
     // Create custom marker icon for evaluations
-    const createEvaluationMarkerIcon = (units: number | null, isHighlighted: boolean = false) => {
+    const createEvaluationMarkerIcon = (
+      units: number | null,
+      isHighlighted: boolean = false,
+      isScraped: boolean = false
+    ) => {
       const unitsText = units != null ? `${units}u` : "?u";
+
+      // Determine color: highlighted > scraped > not scraped
+      let backgroundColor: string;
+      if (isHighlighted) {
+        backgroundColor = '#f59e0b'; // Orange for highlighted
+      } else if (isScraped) {
+        backgroundColor = '#10b981'; // Green for scraped
+      } else {
+        backgroundColor = '#6b7280'; // Gray for not scraped
+      }
 
       return L.divIcon({
         className: "custom-evaluation-marker",
         html: `
           <div style="
-            background: ${isHighlighted ? '#f59e0b' : '#10b981'};
+            background: ${backgroundColor};
             color: white;
             padding: ${isHighlighted ? '6px 10px' : '4px 8px'};
             border-radius: 4px;
@@ -193,9 +207,10 @@ export function PropertiesMap({
     // Add markers for each evaluation
     validEvaluations.forEach((evaluation) => {
       const isHighlighted = highlightedMatricule === evaluation.matricule83;
+      const isScraped = (evaluation as any).is_scraped || false;
       const marker = L.marker(
         [evaluation.latitude!, evaluation.longitude!],
-        { icon: createEvaluationMarkerIcon(evaluation.nombre_logement, isHighlighted) }
+        { icon: createEvaluationMarkerIcon(evaluation.nombre_logement, isHighlighted, isScraped) }
       );
 
       // Format scraped date if available
@@ -345,7 +360,7 @@ export function PropertiesMap({
           ></div>
           <span>Properties (Price)</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
           <div
             style={{
               width: "24px",
@@ -357,7 +372,21 @@ export function PropertiesMap({
               boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
             }}
           ></div>
-          <span>Evaluations (Units)</span>
+          <span>Scraped Buildings</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <div
+            style={{
+              width: "24px",
+              height: "18px",
+              background: "#6b7280",
+              border: "2px solid white",
+              marginRight: "8px",
+              borderRadius: "3px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+            }}
+          ></div>
+          <span>Not Scraped Buildings</span>
         </div>
       </div>
     </div>

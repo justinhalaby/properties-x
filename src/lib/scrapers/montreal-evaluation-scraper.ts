@@ -1,5 +1,16 @@
 import { firefox, Browser, Page } from "playwright";
-import type { ScrapedMontrealData, TaxAccountPDF } from "@/types/montreal-evaluation";
+import type { ScrapedMontrealData, TaxAccountPDF, MultipleResultsInfo } from "@/types/montreal-evaluation";
+import { cleanStreetName } from "@/lib/utils/street-name-cleaner";
+
+// Scraping options interface
+export interface ScrapeOptions {
+  method: 'matricule' | 'address';
+  matricule?: string;
+  address?: {
+    streetNumber: number;
+    streetName: string;
+  };
+}
 
 export class MontrealEvaluationScraper {
   private browser: Browser | null = null;
@@ -12,7 +23,46 @@ export class MontrealEvaluationScraper {
     return parts;
   }
 
-  async scrape(matricule: string): Promise<ScrapedMontrealData> {
+  /**
+   * Main scrape method - supports both matricule and address-based scraping
+   * @param input - Either a matricule string (backward compatible) or ScrapeOptions object
+   */
+  async scrape(input: string | ScrapeOptions): Promise<ScrapedMontrealData> {
+    // Normalize input to ScrapeOptions
+    let options: ScrapeOptions;
+
+    if (typeof input === 'string') {
+      // Backward compatibility: string input is a matricule
+      options = {
+        method: 'matricule',
+        matricule: input
+      };
+    } else {
+      options = input;
+    }
+
+    // Route to appropriate method
+    if (options.method === 'address') {
+      if (!options.address) {
+        throw new Error("Address parameters required for address-based scraping");
+      }
+      return this.scrapeByAddress(
+        options.address.streetNumber,
+        options.address.streetName,
+        options.matricule // Pass known matricule
+      );
+    } else {
+      if (!options.matricule) {
+        throw new Error("Matricule required for matricule-based scraping");
+      }
+      return this.scrapeByMatricule(options.matricule);
+    }
+  }
+
+  /**
+   * Scrape using matricule (existing method, renamed)
+   */
+  private async scrapeByMatricule(matricule: string): Promise<ScrapedMontrealData> {
     try {
       this.browser = await firefox.launch({
         headless: false,
@@ -97,7 +147,13 @@ export class MontrealEvaluationScraper {
         fiscal: await this.scrapeFiscal(page),
         tax_pdfs: [],
         metadata: await this.scrapeMetadata(page),
+        searchMethod: 'matricule',
       };
+
+      const randomSleep2 = () => {
+        return Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
+      };
+      await page.waitForTimeout(randomSleep2());
 
       return scrapedData;
     } finally {
@@ -355,5 +411,217 @@ export class MontrealEvaluationScraper {
       roll_period,
       data_date: "",
     };
+  }
+
+  /**
+   * Scrape using address-based form
+   */
+  private async scrapeByAddress(
+    streetNumber: number,
+    streetName: string,
+    knownMatricule?: string
+  ): Promise<ScrapedMontrealData> {
+    try {
+      this.browser = await firefox.launch({
+        headless: false,
+        slowMo: 500,
+      });
+
+      const page = await this.browser.newPage();
+      await page.setViewportSize({ width: 1920, height: 1080 });
+
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'fr-FR,fr;q=0.9',
+      });
+
+      page.on('dialog', async dialog => {
+        await dialog.dismiss();
+      });
+
+      // Navigate to address-based form
+      await page.goto("https://montreal.ca/role-evaluation-fonciere/adresse", {
+        waitUntil: "networkidle",
+        timeout: 30000,
+      });
+
+      // Remove any modals
+      await page.evaluate(() => {
+        const modal = document.querySelector('.modal');
+        if (modal) modal.remove();
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+      });
+
+      // Actual selectors from montreal.ca address form
+      const SELECTORS = {
+        streetNumber: 'input[name="civicNumber"]',
+        streetName: 'input[name="streetNameCombobox"]',
+        submitButton: 'button[type="submit"].btn-primary',
+        resultItems: '[data-test="button"]', // Same as matricule method
+      };
+
+      // Wait for form and fill it
+      await page.waitForSelector(SELECTORS.streetNumber, { timeout: 10000 });
+
+      const randomSleep = () => {
+        return Math.floor(Math.random() * (5000 - 100 + 1)) + 100; // Increased to 5 seconds
+      };
+
+      // Fill street number
+      await page.locator(SELECTORS.streetNumber).fill(streetNumber.toString());
+      await page.waitForTimeout(randomSleep());
+
+      // Fill street name (autocomplete field)
+      await page.locator(SELECTORS.streetName).fill(streetName);
+      await page.waitForTimeout(randomSleep());
+
+      // Wait for autocomplete dropdown to appear and select first option
+      try {
+        // Wait for dropdown options to appear
+        await page.waitForSelector('[role="option"]', { timeout: 5000 });
+
+        await page.waitForTimeout(randomSleep());
+
+        // Click the first option in the dropdown
+        // await page.locator('[role="option"]').first().click();
+        await page.waitForTimeout(randomSleep());
+      } catch (error) {
+        console.log("No autocomplete dropdown appeared, continuing with typed value");
+      }
+
+      // Submit form
+      await page.locator(SELECTORS.submitButton).click();
+      await page.waitForURL('**/liste**', { timeout: 30000 });
+
+      // Detect and handle results (single or multiple)
+      // Just click on the first result
+      await this.detectAndHandleResults(page, SELECTORS.resultItems);
+
+      // Use the known matricule that was passed in
+      const matriculeToUse = knownMatricule;
+
+      if (!matriculeToUse) {
+        throw new Error("Matricule is required for address-based scraping");
+      }
+
+      console.log(`Using known matricule: ${matriculeToUse}`);
+
+      // Now on the result page, wait for content to load
+      await page.waitForSelector('#identification', { timeout: 10000 });
+      await page.waitForTimeout(2000);
+
+      
+
+      const scrapedData: ScrapedMontrealData = {
+        matricule: matriculeToUse,
+        identification: await this.scrapeIdentification(page),
+        owner: await this.scrapeOwner(page),
+        land: await this.scrapeLand(page),
+        building: await this.scrapeBuilding(page),
+        valuation: await this.scrapeValuation(page),
+        fiscal: await this.scrapeFiscal(page),
+        tax_pdfs: [],
+        metadata: await this.scrapeMetadata(page),
+        searchMethod: 'address',
+      };
+
+      return scrapedData;
+    } finally {
+      if (this.browser) {
+        await this.browser.close();
+      }
+    }
+  }
+
+  /**
+   * Detect if multiple results exist and click the first one
+   */
+  private async detectAndHandleResults(
+    page: Page,
+    resultItemSelector: string
+  ): Promise<void> {
+    // Wait for results to load
+    await page.waitForTimeout(1000);
+
+    // Check for result items
+    const resultItems = await page.locator(resultItemSelector).all();
+    const resultCount = resultItems.length;
+
+    if (resultCount === 0) {
+      throw new Error("No results found for this address");
+    }
+
+    console.log(`📊 Found ${resultCount} result(s)`);
+
+    // Always select first result
+    const selectedIndex = 0;
+    console.log(`Selecting result ${selectedIndex + 1} of ${resultCount}`);
+
+    await resultItems[selectedIndex].click();
+    await page.waitForURL('**/resultat**', { timeout: 30000 });
+  }
+
+  /**
+   * Extract matricule from the result page
+   */
+  private async extractMatriculeFromPage(page: Page): Promise<string | null> {
+    try {
+      // Method 1: Look for matricule pattern anywhere in the page
+      const matriculeText = await page
+        .locator('text=/\\d{4}-\\d{2}-\\d{4}-\\d{1}-\\d{3}-\\d{4}/')
+        .first()
+        .textContent();
+
+      if (matriculeText?.trim()) {
+        const match = matriculeText.match(/\d{4}-\d{2}-\d{4}-\d{1}-\d{3}-\d{4}/);
+        if (match) {
+          return match[0];
+        }
+      }
+
+      // Method 2: Check page URL for matricule pattern
+      const url = page.url();
+      const urlMatch = url.match(/\d{4}-\d{2}-\d{4}-\d{1}-\d{3}-\d{4}/);
+      if (urlMatch) {
+        return urlMatch[0];
+      }
+
+      // Method 3: Look in identification section
+      const identificationSection = await page.locator('#identification ~ ul li').all();
+      for (const item of identificationSection) {
+        const text = await item.textContent();
+        if (text) {
+          const match = text.match(/\d{4}-\d{2}-\d{4}-\d{1}-\d{3}-\d{4}/);
+          if (match) {
+            return match[0];
+          }
+        }
+      }
+
+      console.error("Could not find matricule on page");
+      return null;
+    } catch (error) {
+      console.error("Error extracting matricule:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Helper to extract arrondissement from result text
+   */
+  private extractArrondissementFromText(text: string): string | undefined {
+    // Pattern: look for "Arrondissement de XYZ" or similar
+    const match = text.match(/Arrondissement\s+(?:de\s+)?([^,\n]+)/i);
+    return match ? match[1].trim() : undefined;
+  }
+
+  /**
+   * Helper to extract neighborhood from result text
+   */
+  private extractNeighborhoodFromText(text: string): string | undefined {
+    // Pattern: look for neighborhood indicators
+    // This will depend on actual montreal.ca format
+    const match = text.match(/Quartier\s+([^,\n]+)/i);
+    return match ? match[1].trim() : undefined;
   }
 }

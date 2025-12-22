@@ -42,6 +42,8 @@ export interface PropertyEvaluation {
   superficie_batiment: number | null;
   clean_address: string;
   full_address: string;
+  clean_street_name: string | null; // Street name cleaned for address-based scraping
+  neighborhood: string | null; // Neighborhood for disambiguating addresses
   latitude?: number | null; // Geocoded coordinates
   longitude?: number | null;
   geocoded_at?: string | null;
@@ -71,6 +73,8 @@ export interface PropertyEvaluationInsert {
   categorie_uef: string;
   superficie_terrain?: number | null;
   superficie_batiment?: number | null;
+  clean_street_name?: string | null; // Street name cleaned for address-based scraping
+  neighborhood?: string | null; // Neighborhood for disambiguating addresses
   latitude?: number | null; // Geocoded coordinates
   longitude?: number | null;
   geocoded_at?: string | null;

@@ -1,5 +1,22 @@
 // Types for detailed Montreal property evaluation data from montreal.ca
 
+// New interfaces for address-based scraping
+export interface AddressSearchParams {
+  streetNumber: number;
+  streetName: string;
+}
+
+export interface MultipleResultsInfo {
+  hasMultiple: boolean;
+  count?: number;
+  results?: Array<{
+    address: string;
+    arrondissement?: string;
+    neighborhood?: string;
+  }>;
+  selectedIndex?: number;
+}
+
 export interface MontrealEvaluationDetails {
   id: string;
   created_at: string;
@@ -60,6 +77,9 @@ export interface MontrealEvaluationDetails {
   roll_period: string | null;
   data_date: string | null;
   scraped_at: string;
+
+  // Multiple results info (for address-based scraping)
+  multiple_results_info: MultipleResultsInfo | null;
 }
 
 export interface TaxAccountPDF {
@@ -159,4 +179,5 @@ export interface ScrapedMontrealData {
     roll_period: string;
     data_date: string;
   };
+  searchMethod: 'matricule' | 'address';
 }
