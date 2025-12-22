@@ -1,0 +1,1093 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.603337,
+          45.446274
+        ]
+      },
+      "properties": {
+        "name": "Angrignon",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "3500 Boulevard des Trinitaires, Montréal, QC H4E 4J3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.593641,
+          45.451368
+        ]
+      },
+      "properties": {
+        "name": "Monk",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "7200 Rue Allard, Montréal, QC H4E 2C7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.582424,
+          45.457007
+        ]
+      },
+      "properties": {
+        "name": "Jolicoeur",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4305 Rue Jolicoeur, Montréal, QC H4E 1M1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.571477,
+          45.459033
+        ]
+      },
+      "properties": {
+        "name": "Verdun",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4001 Rue de Verdun, Montréal, QC H4G 1K7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.567086,
+          45.462899
+        ]
+      },
+      "properties": {
+        "name": "De L'Église",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4571 Rue de Verdun, Montréal, QC H4G 1M4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.566371,
+          45.471378
+        ]
+      },
+      "properties": {
+        "name": "LaSalle",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1800 Avenue Dollard, Montréal, QC H8N 1S5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.571597,
+          45.478443
+        ]
+      },
+      "properties": {
+        "name": "Charlevoix",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4555 Rue Charlevoix, Montréal, QC H3K 1N8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.579457,
+          45.483166
+        ]
+      },
+      "properties": {
+        "name": "Lionel-Groulx",
+        "line": "Green Line (1) / Orange Line (2)",
+        "type": "metro",
+        "address": "1490 Rue Saint-Jacques, Montréal, QC H3C 3Y3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.584732,
+          45.489679
+        ]
+      },
+      "properties": {
+        "name": "Atwater",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "2161 Rue Saint-Antoine O, Montréal, QC H3J 2T8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.579603,
+          45.494793
+        ]
+      },
+      "properties": {
+        "name": "Guy-Concordia",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1445 Boulevard De Maisonneuve O, Montréal, QC H3G 1M8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.574676,
+          45.500958
+        ]
+      },
+      "properties": {
+        "name": "Peel",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1100 Boulevard De Maisonneuve O, Montréal, QC H3A 1M8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.570997,
+          45.504061
+        ]
+      },
+      "properties": {
+        "name": "McGill",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1000 De La Gauchetière St W, Montréal, QC H3B 4W5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.566874,
+          45.508208
+        ]
+      },
+      "properties": {
+        "name": "Place-des-Arts",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "175 Rue Sainte-Catherine O, Montréal, QC H2X 1Z8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.564757,
+          45.510884
+        ]
+      },
+      "properties": {
+        "name": "Saint-Laurent",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "320 Boulevard Saint-Laurent, Montréal, QC H2X 2T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.560690,
+          45.515228
+        ]
+      },
+      "properties": {
+        "name": "Berri-UQAM",
+        "line": "Green Line (1) / Orange Line (2) / Yellow Line (4)",
+        "type": "metro",
+        "address": "1065 Rue Berri, Montréal, QC H2L 4M7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.557088,
+          45.518652
+        ]
+      },
+      "properties": {
+        "name": "Beaudry",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1415 Rue Ste-Catherine E, Montréal, QC H2L 2H4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.551711,
+          45.523588
+        ]
+      },
+      "properties": {
+        "name": "Papineau",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "1575 Boulevard De Maisonneuve E, Montréal, QC H2L 4P4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.543594,
+          45.532356
+        ]
+      },
+      "properties": {
+        "name": "Frontenac",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "2100 Rue Ontario E, Montréal, QC H2K 1V6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.539824,
+          45.541604
+        ]
+      },
+      "properties": {
+        "name": "Préfontaine",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "2877 Rue Ontario E, Montréal, QC H2K 1W9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.536696,
+          45.546798
+        ]
+      },
+      "properties": {
+        "name": "Joliette",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "3333 Rue Ontario E, Montréal, QC H1W 1P7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.532724,
+          45.553928
+        ]
+      },
+      "properties": {
+        "name": "Pie-IX",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "3801 Rue Ontario E, Montréal, QC H1W 1S3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.528992,
+          45.560934
+        ]
+      },
+      "properties": {
+        "name": "Viau",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4303 Rue Ontario E, Montréal, QC H1V 1K5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.530397,
+          45.569420
+        ]
+      },
+      "properties": {
+        "name": "Assomption",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4705 Rue Hochelaga, Montréal, QC H1V 1E6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.540191,
+          45.577180
+        ]
+      },
+      "properties": {
+        "name": "Cadillac",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4800 Rue de Cadillac, Montréal, QC H1V 3M7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.549226,
+          45.582697
+        ]
+      },
+      "properties": {
+        "name": "Langelier",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "8350 Rue Hochelaga, Montréal, QC H1L 2M1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.556272,
+          45.588820
+        ]
+      },
+      "properties": {
+        "name": "Radisson",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "6245 Rue Hochelaga, Montréal, QC H1N 3L5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.563063,
+          45.596205
+        ]
+      },
+      "properties": {
+        "name": "Honoré-Beaugrand",
+        "line": "Green Line (1)",
+        "type": "metro",
+        "address": "4805 Boulevard Radisson, Montréal, QC H1N 3K9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.682855,
+          45.514101
+        ]
+      },
+      "properties": {
+        "name": "Côte-Vertu",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "3730 Boulevard de la Côte-Vertu, Montréal, QC H4R 1P8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.676643,
+          45.509094
+        ]
+      },
+      "properties": {
+        "name": "Du Collège",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "905 Rue du Collège, Montréal, QC H4L 2M4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.6562435,
+          45.5031102
+        ]
+      },
+      "properties": {
+        "name": "De La Savane",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2155 Rue Poirier, Montréal, QC H4R 2T3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.652758,
+          45.494635
+        ]
+      },
+      "properties": {
+        "name": "Namur",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "5575 Avenue de Westbury, Montréal, QC H3W 2W9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.642084,
+          45.495201
+        ]
+      },
+      "properties": {
+        "name": "Plamondon",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "5250 Chemin Queen Mary, Montréal, QC H3W 1X5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.633519,
+          45.492543
+        ]
+      },
+      "properties": {
+        "name": "Côte-Sainte-Catherine",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "5085 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3W 1M6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.628461,
+          45.485458
+        ]
+      },
+      "properties": {
+        "name": "Snowdon",
+        "line": "Orange Line (2) / Blue Line (5)",
+        "type": "metro",
+        "address": "4847 Chemin de la Côte-des-Neiges, Montréal, QC H3V 1G4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.619224,
+          45.479536
+        ]
+      },
+      "properties": {
+        "name": "Villa-Maria",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "4260 Boulevard Décarie, Montréal, QC H4A 3K5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.606368,
+          45.473859
+        ]
+      },
+      "properties": {
+        "name": "Vendôme",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "4300 Avenue de Vendôme, Montréal, QC H4A 3M5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.589839,
+          45.477028
+        ]
+      },
+      "properties": {
+        "name": "Place-Saint-Henri",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "3800 Rue Saint-Jacques, Montréal, QC H4C 1H3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.576856,
+          45.487962
+        ]
+      },
+      "properties": {
+        "name": "Georges-Vanier",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2175 Rue Saint-Antoine O, Montréal, QC H3J 1B3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.571060,
+          45.494799
+        ]
+      },
+      "properties": {
+        "name": "Lucien-L'Allier",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "1200 Rue Lucien-L'Allier, Montréal, QC H3G 2G5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.567084,
+          45.498175
+        ]
+      },
+      "properties": {
+        "name": "Bonaventure",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "800 Rue de la Gauchetière O, Montréal, QC H5A 1K6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.562758,
+          45.501550
+        ]
+      },
+      "properties": {
+        "name": "Square-Victoria-OACI",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "800 Square-Victoria, Montréal, QC H4Z 1A1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.559599,
+          45.505963
+        ]
+      },
+      "properties": {
+        "name": "Place-d'Armes",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "500 Place d'Armes, Montréal, QC H2Y 2W2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.556294,
+          45.510343
+        ]
+      },
+      "properties": {
+        "name": "Champ-de-Mars",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "800 Rue Gosford, Montréal, QC H2Y 3C1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.567303,
+          45.518606
+        ]
+      },
+      "properties": {
+        "name": "Sherbrooke",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "1625 Rue Berri, Montréal, QC H2L 4E5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.581561,
+          45.524458
+        ]
+      },
+      "properties": {
+        "name": "Mont-Royal",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "1475 Avenue du Mont-Royal E, Montréal, QC H2J 1Z1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.588265,
+          45.527663
+        ]
+      },
+      "properties": {
+        "name": "Laurier",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "1310 Avenue Laurier E, Montréal, QC H2J 1H3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.597652,
+          45.531777
+        ]
+      },
+      "properties": {
+        "name": "Rosemont",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2580 Boulevard Rosemont, Montréal, QC H1Y 1M4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.605335,
+          45.535035
+        ]
+      },
+      "properties": {
+        "name": "Beaubien",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2540 Rue Beaubien E, Montréal, QC H1Y 1G3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.613437,
+          45.539527
+        ]
+      },
+      "properties": {
+        "name": "Jean-Talon",
+        "line": "Orange Line (2) / Blue Line (5)",
+        "type": "metro",
+        "address": "7075 Rue Hutchison, Montréal, QC H3N 1Y9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.623863,
+          45.543419
+        ]
+      },
+      "properties": {
+        "name": "Jarry",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "7315 Avenue du Parc, Montréal, QC H3N 1Y1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.637775,
+          45.546313
+        ]
+      },
+      "properties": {
+        "name": "Crémazie",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "1005 Boulevard Crémazie E, Montréal, QC H2M 2T6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.652870,
+          45.550754
+        ]
+      },
+      "properties": {
+        "name": "Sauvé",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "6855 Rue Berri, Montréal, QC H2G 2G6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.668383,
+          45.555234
+        ]
+      },
+      "properties": {
+        "name": "Henri-Bourassa",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "590 Boulevard Henri-Bourassa E, Montréal, QC H3L 1C1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.682498,
+          45.560506
+        ]
+      },
+      "properties": {
+        "name": "Cartier",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2905 Boulevard Henri-Bourassa E, Laval, QC H7E 3B5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.711166,
+          45.560799
+        ]
+      },
+      "properties": {
+        "name": "De La Concorde",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "3300 Boulevard Le Carrefour, Laval, QC H7T 1C7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.721495,
+          45.558000
+        ]
+      },
+      "properties": {
+        "name": "Montmorency",
+        "line": "Orange Line (2)",
+        "type": "metro",
+        "address": "2530 Boulevard de l'Avenir, Laval, QC H7E 4P2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.536123,
+          45.513470
+        ]
+      },
+      "properties": {
+        "name": "Jean-Drapeau",
+        "line": "Yellow Line (4)",
+        "type": "metro",
+        "address": "1 Circuit Gilles Villeneuve, Montréal, QC H3C 1A9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.521575,
+          45.525651
+        ]
+      },
+      "properties": {
+        "name": "Longueuil–Université-de-Sherbrooke",
+        "line": "Yellow Line (4)",
+        "type": "metro",
+        "address": "150 Place Charles-Le Moyne, Longueuil, QC J4K 0A8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.623048,
+          45.496839
+        ]
+      },
+      "properties": {
+        "name": "Côte-des-Neiges",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "5115 Chemin de la Côte-des-Neiges, Montréal, QC H3T 1X8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.618649,
+          45.503175
+        ]
+      },
+      "properties": {
+        "name": "Université-de-Montréal",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "5155 Chemin de la Rampe, Montréal, QC H3T 2B2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.613303,
+          45.510167
+        ]
+      },
+      "properties": {
+        "name": "Édouard-Montpetit",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "5005 Boulevard Édouard-Montpetit, Montréal, QC H3T 1J6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.614867,
+          45.519349
+        ]
+      },
+      "properties": {
+        "name": "Outremont",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "945 Avenue Van Horne, Montréal, QC H2V 1K4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.623706,
+          45.523315
+        ]
+      },
+      "properties": {
+        "name": "Acadie",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "5000 Boulevard de l'Acadie, Montréal, QC H4N 1P6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.624131,
+          45.530669
+        ]
+      },
+      "properties": {
+        "name": "Parc",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "7525 Avenue du Parc, Montréal, QC H3N 1X7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.619379,
+          45.535544
+        ]
+      },
+      "properties": {
+        "name": "De Castelnau",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "7100 Rue Jean-Talon E, Montréal, QC H1M 3S3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.607421,
+          45.545759
+        ]
+      },
+      "properties": {
+        "name": "Fabre",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "7255 Rue Fabre, Montréal, QC H2E 2Z7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.600984,
+          45.552697
+        ]
+      },
+      "properties": {
+        "name": "D'Iberville",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "6710 Rue Jean-Talon E, Montréal, QC H1S 2W8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.596639,
+          45.558362
+        ]
+      },
+      "properties": {
+        "name": "Saint-Michel",
+        "line": "Blue Line (5)",
+        "type": "metro",
+        "address": "8505 Boulevard Saint-Michel, Montréal, QC H1Z 3E9"
+      }
+    }
+  ]
+}

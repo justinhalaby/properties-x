@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Property } from "@/types/property";
 import type { PropertyEvaluation } from "@/types/property-evaluation";
+import type { POIType } from "@/types/poi";
+import { usePOIs } from "@/hooks/usePOIs";
+import { POILayerControl } from "./poi-layer-control";
 
 interface PropertiesMapProps {
   properties: Property[];
@@ -34,6 +37,25 @@ export function PropertiesMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const zoneBoundsRef = useRef<L.Rectangle | null>(null);
+  const poiLayersRef = useRef<Record<POIType, L.LayerGroup>>({
+    hospital: L.layerGroup(),
+    university: L.layerGroup(),
+    cegep: L.layerGroup(),
+    metro: L.layerGroup(),
+    rem: L.layerGroup(),
+  });
+
+  // Load POI data
+  const { pois, getByType } = usePOIs();
+
+  // POI layer visibility state
+  const [poiLayers, setPoiLayers] = useState<Record<POIType, boolean>>({
+    hospital: true,
+    university: true,
+    cegep: true,
+    metro: true,
+    rem: true,
+  });
 
   // Initialize map
   useEffect(() => {
@@ -63,6 +85,8 @@ export function PropertiesMap({
       map.remove();
       mapInstanceRef.current = null;
       markersRef.current = null;
+      // Clean up POI layers
+      Object.values(poiLayersRef.current).forEach(layer => layer.remove());
     };
   }, []);
 
@@ -91,6 +115,87 @@ export function PropertiesMap({
       }).addTo(mapInstanceRef.current);
     }
   }, [zoneBounds]);
+
+  // Toggle POI layer visibility
+  const togglePOILayer = (type: POIType) => {
+    setPoiLayers(prev => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  // Create POI markers for a specific type
+  const createPOIMarkers = (type: POIType) => {
+    if (!mapInstanceRef.current || !poiLayers[type]) return;
+
+    const colors: Record<POIType, string> = {
+      hospital: '#ef4444',    // Red
+      university: '#a855f7',  // Purple
+      cegep: '#3b82f6',       // Blue
+      metro: '#f97316',       // Orange
+      rem: '#14b8a6',         // Teal
+    };
+
+    const typePOIs = getByType(type);
+
+    typePOIs.forEach(poi => {
+      const displayName = poi.name.length > 20 ? poi.name.slice(0, 17) + '...' : poi.name;
+
+      const icon = L.divIcon({
+        className: 'poi-marker',
+        html: `
+          <div style="
+            background-color: ${colors[type]};
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">
+            ${displayName}
+          </div>
+        `,
+        iconSize: [undefined, 24],
+        iconAnchor: [0, 12],
+      });
+
+      const popup = `
+        <div style="min-width: 150px;">
+          <strong style="font-size: 13px;">${poi.name}</strong><br/>
+          <small style="color: #666; text-transform: uppercase; font-size: 10px;">${poi.type}</small><br/>
+          ${poi.address ? `<small style="color: #666; font-size: 11px;">${poi.address}</small>` : ''}
+        </div>
+      `;
+
+      // Note: GeoJSON coordinates are [lng, lat], Leaflet expects [lat, lng]
+      L.marker([poi.coordinates[1], poi.coordinates[0]], { icon })
+        .bindPopup(popup)
+        .addTo(poiLayersRef.current[type]);
+    });
+
+    poiLayersRef.current[type].addTo(mapInstanceRef.current);
+  };
+
+  // Update POI layers when visibility or data changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || pois.length === 0) return;
+
+    Object.entries(poiLayers).forEach(([type, visible]) => {
+      const poiType = type as POIType;
+
+      // Clear existing layer
+      poiLayersRef.current[poiType].clearLayers();
+
+      if (visible) {
+        createPOIMarkers(poiType);
+      } else {
+        // Remove from map if not visible
+        if (mapInstanceRef.current?.hasLayer(poiLayersRef.current[poiType])) {
+          mapInstanceRef.current.removeLayer(poiLayersRef.current[poiType]);
+        }
+      }
+    });
+  }, [poiLayers, pois, getByType]);
 
   // Update markers when properties or evaluations change
   useEffect(() => {
@@ -329,11 +434,19 @@ export function PropertiesMap({
         className={`w-full h-full min-h-[400px] ${className}`}
       />
 
+      {/* POI Layer Control */}
+      {mapInstanceRef.current && (
+        <POILayerControl
+          layers={poiLayers}
+          onToggle={togglePOILayer}
+        />
+      )}
+
       {/* Map Legend */}
       <div
         style={{
           position: "absolute",
-          top: "10px",
+          bottom: "10px",
           right: "10px",
           background: "white",
           padding: "12px",

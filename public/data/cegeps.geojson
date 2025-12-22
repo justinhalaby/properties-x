@@ -1,0 +1,245 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.586446,
+          45.489345
+        ]
+      },
+      "properties": {
+        "name": "Dawson College",
+        "type": "cegep",
+        "address": "3040 Rue Sherbrooke O, Montréal, QC H3Z 1A4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.564440,
+          45.513330
+        ]
+      },
+      "properties": {
+        "name": "Cégep du Vieux Montréal",
+        "type": "cegep",
+        "address": "255 Rue Ontario E, Montréal, QC H2X 1X6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.675620,
+          45.514730
+        ]
+      },
+      "properties": {
+        "name": "Vanier College",
+        "type": "cegep",
+        "address": "821 Avenue Sainte-Croix, Saint-Laurent, QC H4L 3X9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.553330,
+          45.551110
+        ]
+      },
+      "properties": {
+        "name": "Collège de Maisonneuve",
+        "type": "cegep",
+        "address": "3800 Rue Sherbrooke E, Montréal, QC H1X 2A2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.583900,
+          45.556100
+        ]
+      },
+      "properties": {
+        "name": "Cégep de Rosemont",
+        "type": "cegep",
+        "address": "6400 16e Avenue, Montréal, QC H1X 2S9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.642220,
+          45.553610
+        ]
+      },
+      "properties": {
+        "name": "Collège Ahuntsic",
+        "type": "cegep",
+        "address": "9155 Rue Saint-Hubert, Montréal, QC H2M 1Y8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.673890,
+          45.538610
+        ]
+      },
+      "properties": {
+        "name": "Collège de Bois-de-Boulogne",
+        "type": "cegep",
+        "address": "10555 Avenue de Bois-de-Boulogne, Montréal, QC H4N 1L4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.673610,
+          45.510830
+        ]
+      },
+      "properties": {
+        "name": "Cégep de Saint-Laurent",
+        "type": "cegep",
+        "address": "625 Avenue Sainte-Croix, Saint-Laurent, QC H4L 3X7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.626400,
+          45.432800
+        ]
+      },
+      "properties": {
+        "name": "Cégep André-Laurendeau",
+        "type": "cegep",
+        "address": "1111 Rue Lapierre, LaSalle, QC H8N 2J4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.606400,
+          45.617200
+        ]
+      },
+      "properties": {
+        "name": "Cégep Marie-Victorin",
+        "type": "cegep",
+        "address": "7000 Rue Marie-Victorin, Montréal, QC H1G 2J6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.940800,
+          45.406100
+        ]
+      },
+      "properties": {
+        "name": "John Abbott College",
+        "type": "cegep",
+        "address": "21275 Lakeshore Dr, Sainte-Anne-de-Bellevue, QC H9X 3L9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.877200,
+          45.483600
+        ]
+      },
+      "properties": {
+        "name": "Cégep Gérald-Godin",
+        "type": "cegep",
+        "address": "15615 Boulevard Gouin O, Sainte-Geneviève, QC H9H 5K8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.621400,
+          45.502800
+        ]
+      },
+      "properties": {
+        "name": "Collège Jean-de-Brébeuf",
+        "type": "cegep",
+        "address": "3200 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 1C1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.604200,
+          45.485600
+        ]
+      },
+      "properties": {
+        "name": "Marianopolis College",
+        "type": "cegep",
+        "address": "4873 Avenue Westmount, Westmount, QC H3Y 1X9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.642200,
+          45.547800
+        ]
+      },
+      "properties": {
+        "name": "Collège André-Grasset",
+        "type": "cegep",
+        "address": "1001 Boulevard Crémazie E, Montréal, QC H2M 1M3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.578600,
+          45.492200
+        ]
+      },
+      "properties": {
+        "name": "LaSalle College",
+        "type": "cegep",
+        "address": "2000 Rue Sainte-Catherine O, Montréal, QC H3H 2T2"
+      }
+    }
+  ]
+}

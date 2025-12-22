@@ -1,0 +1,350 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.623719,
+          45.503038
+        ]
+      },
+      "properties": {
+        "name": "CHU Sainte-Justine",
+        "type": "hospital",
+        "address": "3175 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 1C5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.558004,
+          45.511317
+        ]
+      },
+      "properties": {
+        "name": "CHUM (Centre hospitalier de l'Université de Montréal)",
+        "type": "hospital",
+        "address": "1000 Rue Saint-Denis, Montréal, QC H2X 0C1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.588500,
+          45.497300
+        ]
+      },
+      "properties": {
+        "name": "Montreal General Hospital",
+        "type": "hospital",
+        "address": "1650 Avenue Cedar, Montréal, QC H3G 1A4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.602716,
+          45.471851
+        ]
+      },
+      "properties": {
+        "name": "Royal Victoria Hospital (Glen Site)",
+        "type": "hospital",
+        "address": "1001 Boulevard Décarie, Montréal, QC H4A 3J1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.602716,
+          45.472000
+        ]
+      },
+      "properties": {
+        "name": "Montreal Children's Hospital (Glen Site)",
+        "type": "hospital",
+        "address": "1001 Boulevard Décarie, Montréal, QC H4A 3J1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.629000,
+          45.498000
+        ]
+      },
+      "properties": {
+        "name": "Jewish General Hospital",
+        "type": "hospital",
+        "address": "3755 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 1E2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.558333,
+          45.573889
+        ]
+      },
+      "properties": {
+        "name": "Hôpital Maisonneuve-Rosemont",
+        "type": "hospital",
+        "address": "5415 Boulevard de l'Assomption, Montréal, QC H1T 2M4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.714400,
+          45.532400
+        ]
+      },
+      "properties": {
+        "name": "Hôpital du Sacré-Cœur-de-Montréal",
+        "type": "hospital",
+        "address": "5400 Boulevard Gouin O, Montréal, QC H4J 1C5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.624167,
+          45.494722
+        ]
+      },
+      "properties": {
+        "name": "St. Mary's Hospital",
+        "type": "hospital",
+        "address": "3830 Avenue Lacombe, Montréal, QC H3T 1M5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.571680,
+          45.580187
+        ]
+      },
+      "properties": {
+        "name": "Hôpital Santa Cabrini Ospedale",
+        "type": "hospital",
+        "address": "5655 Rue Saint-Zotique E, Montréal, QC H1T 1P7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.563889,
+          45.463889
+        ]
+      },
+      "properties": {
+        "name": "Hôpital de Verdun",
+        "type": "hospital",
+        "address": "4000 Boulevard LaSalle, Montréal, QC H4G 2A3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.652000,
+          45.569000
+        ]
+      },
+      "properties": {
+        "name": "Hôpital Fleury",
+        "type": "hospital",
+        "address": "2180 Rue Fleury E, Montréal, QC H2B 1K3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.609411,
+          45.545982
+        ]
+      },
+      "properties": {
+        "name": "Hôpital Jean-Talon",
+        "type": "hospital",
+        "address": "1385 Rue Jean-Talon E, Montréal, QC H2E 1S6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.676988,
+          45.441036
+        ]
+      },
+      "properties": {
+        "name": "Lachine Hospital",
+        "type": "hospital",
+        "address": "650 16e Avenue, Lachine, QC H8S 3N5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.620000,
+          45.421000
+        ]
+      },
+      "properties": {
+        "name": "Hôpital de LaSalle",
+        "type": "hospital",
+        "address": "8585 Terrasse Champlain, LaSalle, QC H8P 1C1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.832200,
+          45.446300
+        ]
+      },
+      "properties": {
+        "name": "Lakeshore General Hospital",
+        "type": "hospital",
+        "address": "160 Avenue Stillview, Pointe-Claire, QC H9R 2Y2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.530000,
+          45.590000
+        ]
+      },
+      "properties": {
+        "name": "Institut universitaire en santé mentale de Montréal",
+        "type": "hospital",
+        "address": "7401 Rue Hochelaga, Montréal, QC H1N 3M5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.585401,
+          45.442206
+        ]
+      },
+      "properties": {
+        "name": "Douglas Mental Health University Institute",
+        "type": "hospital",
+        "address": "6875 Boulevard LaSalle, Montréal, QC H4H 1R3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.581110,
+          45.508890
+        ]
+      },
+      "properties": {
+        "name": "Montreal Neurological Institute-Hospital",
+        "type": "hospital",
+        "address": "3801 Rue University, Montréal, QC H3A 2B4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.577800,
+          45.573800
+        ]
+      },
+      "properties": {
+        "name": "Montreal Heart Institute",
+        "type": "hospital",
+        "address": "5000 Rue Bélanger, Montréal, QC H1T 1C8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.603000,
+          45.472000
+        ]
+      },
+      "properties": {
+        "name": "Shriners Hospitals for Children – Canada",
+        "type": "hospital",
+        "address": "1003 Boulevard Décarie, Montréal, QC H4A 0A9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.607000,
+          45.623000
+        ]
+      },
+      "properties": {
+        "name": "Hôpital Rivière-des-Prairies",
+        "type": "hospital",
+        "address": "7070 Boulevard Perras, Montréal, QC H1E 1A4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.557954,
+          45.509505
+        ]
+      },
+      "properties": {
+        "name": "Montreal Chinese Hospital",
+        "type": "hospital",
+        "address": "189 Avenue Viger E, Montréal, QC H2X 3Y9"
+      }
+    }
+  ]
+}

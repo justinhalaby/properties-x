@@ -1,0 +1,230 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.578028,
+          45.504104
+        ]
+      },
+      "properties": {
+        "name": "McGill University (Downtown Campus)",
+        "type": "university",
+        "address": "845 Rue Sherbrooke O, Montréal, QC H3A 0G4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.938833,
+          45.407222
+        ]
+      },
+      "properties": {
+        "name": "McGill University (Macdonald Campus)",
+        "type": "university",
+        "address": "21111 Lakeshore Rd, Sainte-Anne-de-Bellevue, QC H9X 3V9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.578650,
+          45.497190
+        ]
+      },
+      "properties": {
+        "name": "Concordia University (Sir George Williams Campus)",
+        "type": "university",
+        "address": "1455 Boulevard De Maisonneuve O, Montréal, QC H3G 1M8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.639350,
+          45.457810
+        ]
+      },
+      "properties": {
+        "name": "Concordia University (Loyola Campus)",
+        "type": "university",
+        "address": "7141 Rue Sherbrooke O, Montréal, QC H4B 1R6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.614830,
+          45.503460
+        ]
+      },
+      "properties": {
+        "name": "Université de Montréal (Main Campus)",
+        "type": "university",
+        "address": "2900 Boulevard Édouard-Montpetit, Montréal, QC H3T 1J4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.6188895,
+          45.5223736
+        ]
+      },
+      "properties": {
+        "name": "Université de Montréal (MIL Campus)",
+        "type": "university",
+        "address": "1375 Avenue Thérèse-Lavoie-Roux, Montréal, QC H2V 0B3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.562300,
+          45.515000
+        ]
+      },
+      "properties": {
+        "name": "UQAM (Université du Québec à Montréal)",
+        "type": "university",
+        "address": "405 Rue Sainte-Catherine E, Montréal, QC H2L 2C4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.559981,
+          45.505672
+        ]
+      },
+      "properties": {
+        "name": "ÉTS (École de technologie supérieure)",
+        "type": "university",
+        "address": "1100 Rue Notre-Dame O, Montréal, QC H3C 1K3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.617160,
+          45.504280
+        ]
+      },
+      "properties": {
+        "name": "Polytechnique Montréal",
+        "type": "university",
+        "address": "2900 Boulevard Édouard-Montpetit, Montréal, QC H3T 1J4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.623100,
+          45.502800
+        ]
+      },
+      "properties": {
+        "name": "HEC Montréal (Côte-Sainte-Catherine)",
+        "type": "university",
+        "address": "3000 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 2A7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.566800,
+          45.502900
+        ]
+      },
+      "properties": {
+        "name": "HEC Montréal (Hélène-Desmarais)",
+        "type": "university",
+        "address": "501 Rue de la Gauchetière O, Montréal, QC H2Z 1Z5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.585720,
+          45.490710
+        ]
+      },
+      "properties": {
+        "name": "INRS (Institut national de la recherche scientifique) - Urbanisation",
+        "type": "university",
+        "address": "385 Rue Sherbrooke E, Montréal, QC H2X 1E3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.707778,
+          45.568333
+        ]
+      },
+      "properties": {
+        "name": "INRS - Institut Armand-Frappier",
+        "type": "university",
+        "address": "531 Boulevard des Prairies, Laval, QC H7V 1B7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.571900,
+          45.508500
+        ]
+      },
+      "properties": {
+        "name": "ENAP (École nationale d'administration publique)",
+        "type": "university",
+        "address": "4750 Avenue Henri-Julien, Montréal, QC H2T 2C8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.523800,
+          45.526800
+        ]
+      },
+      "properties": {
+        "name": "Université de Sherbrooke (Longueuil Campus)",
+        "type": "university",
+        "address": "150 Place Charles-Le Moyne, Longueuil, QC J4K 0A8"
+      }
+    }
+  ]
+}

@@ -1,0 +1,421 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.430732,
+          45.438286
+        ]
+      },
+      "properties": {
+        "name": "Brossard",
+        "line": "REM (South Shore)",
+        "type": "rem",
+        "address": "8500 Boulevard de Rome, Brossard, QC J4Z 3H8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.434913,
+          45.446139
+        ]
+      },
+      "properties": {
+        "name": "Du Quartier",
+        "line": "REM (South Shore)",
+        "type": "rem",
+        "address": "Brossard, QC J4Y 0B3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.469894,
+          45.464938
+        ]
+      },
+      "properties": {
+        "name": "Panama",
+        "line": "REM (South Shore)",
+        "type": "rem",
+        "address": "7075 Avenue Tisserand, Brossard, QC J4W 3A8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.538467,
+          45.470360
+        ]
+      },
+      "properties": {
+        "name": "Île-des-Soeurs",
+        "line": "REM (South Shore)",
+        "type": "rem",
+        "address": "900 Boulevard René-Lévesque, Verdun, QC H3E 1H5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.558889,
+          45.496389
+        ]
+      },
+      "properties": {
+        "name": "Griffintown–Bernard-Landry (Planned)",
+        "line": "REM (South Shore)",
+        "type": "rem",
+        "address": "Rue Dalhousie, Montréal, QC"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.566522,
+          45.500112
+        ]
+      },
+      "properties": {
+        "name": "Gare Centrale",
+        "line": "REM (Central)",
+        "type": "rem",
+        "address": "895 Rue De la Gauchetière O, Montréal, QC H3B 4G1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.572432,
+          45.502788
+        ]
+      },
+      "properties": {
+        "name": "McGill",
+        "line": "REM (Central)",
+        "type": "rem",
+        "address": "1771 Avenue McGill College, Montréal, QC H3A 1Z4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.612881,
+          45.509936
+        ]
+      },
+      "properties": {
+        "name": "Édouard-Montpetit",
+        "line": "REM (Central)",
+        "type": "rem",
+        "address": "Montréal, QC H3T 1J4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.633899,
+          45.513786
+        ]
+      },
+      "properties": {
+        "name": "Canora",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "7376 Chemin Canora, Montréal, QC H3P 3J6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.643232,
+          45.516471
+        ]
+      },
+      "properties": {
+        "name": "Ville-de-Mont-Royal",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Chemin Canora, Mont-Royal, QC H3R 3L3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.660983,
+          45.521568
+        ]
+      },
+      "properties": {
+        "name": "Côte-de-Liesse",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Saint-Laurent, QC H4N 2E1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.672110,
+          45.524866
+        ]
+      },
+      "properties": {
+        "name": "Montpellier",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Montréal, QC H4N 1E8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.690519,
+          45.529006
+        ]
+      },
+      "properties": {
+        "name": "Du Ruisseau",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Ahuntsic-Cartierville, Montréal, QC H4J 1P8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.712111,
+          45.522173
+        ]
+      },
+      "properties": {
+        "name": "Bois-Franc",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Saint-Laurent, Montréal, QC H4K 1L4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.786340,
+          45.503983
+        ]
+      },
+      "properties": {
+        "name": "Sunnybrooke",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Dollard-Des Ormeaux, QC H9B 3G7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.812506,
+          45.509836
+        ]
+      },
+      "properties": {
+        "name": "Pierrefonds-Roxboro",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Pierrefonds-Roxboro, Montréal, QC H8Y 2T6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.853830,
+          45.519718
+        ]
+      },
+      "properties": {
+        "name": "Île-Bigras",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "705 Chemin du Bois, Laval, QC H7Y 1J3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.862233,
+          45.523407
+        ]
+      },
+      "properties": {
+        "name": "Sainte-Dorothée",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "1411 Chemin du Bord-de-l'Eau, Laval, QC H7Y 1C5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.887164,
+          45.536877
+        ]
+      },
+      "properties": {
+        "name": "Grand-Moulin",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Rue de la Gare, Deux-Montagnes, QC J7R 1B3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.912407,
+          45.545685
+        ]
+      },
+      "properties": {
+        "name": "Deux-Montagnes",
+        "line": "REM (Deux-Montagnes)",
+        "type": "rem",
+        "address": "Deux-Montagnes, QC J7R 7C2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.790784,
+          45.477337
+        ]
+      },
+      "properties": {
+        "name": "Des Sources",
+        "line": "REM (Anse-à-l'Orme)",
+        "type": "rem",
+        "address": "2860 Boulevard des Sources, Pointe-Claire, QC H9R 4T2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.835332,
+          45.459993
+        ]
+      },
+      "properties": {
+        "name": "Fairview–Pointe-Claire",
+        "line": "REM (Anse-à-l'Orme)",
+        "type": "rem",
+        "address": "Pointe-Claire, QC H9R 1N8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.885800,
+          45.440300
+        ]
+      },
+      "properties": {
+        "name": "Kirkland",
+        "line": "REM (Anse-à-l'Orme)",
+        "type": "rem",
+        "address": "Rue Jean-Yves, Kirkland, QC"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.917502,
+          45.429740
+        ]
+      },
+      "properties": {
+        "name": "Anse-à-l'Orme",
+        "line": "REM (Anse-à-l'Orme)",
+        "type": "rem",
+        "address": "Chemin Sainte-Marie, Sainte-Anne-de-Bellevue, QC"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.760000,
+          45.479444
+        ]
+      },
+      "properties": {
+        "name": "Marie-Curie",
+        "line": "REM (Aéroport)",
+        "type": "rem",
+        "address": "Technoparc Montréal, Saint-Laurent, QC"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.749600,
+          45.457100
+        ]
+      },
+      "properties": {
+        "name": "YUL-Aéroport-Montréal-Trudeau",
+        "line": "REM (Aéroport)",
+        "type": "rem",
+        "address": "Dorval, QC H4Y 1H2"
+      }
+    }
+  ]
+}
