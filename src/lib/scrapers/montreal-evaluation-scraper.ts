@@ -164,16 +164,29 @@ export class MontrealEvaluationScraper {
   }
 
   private async scrapeIdentification(page: Page) {
-    const getText = async (label: string): Promise<string> => {
+    const getText = async (label: string, fallbackLabels: string[] = []): Promise<string> => {
       const items = await page.locator('#identification ~ ul li').all();
-      for (const item of items) {
-        const text = await item.textContent();
-        if (text && text.includes(label)) {
-          const divs = await item.locator('div').all();
-          for (const div of divs) {
-            const divText = await div.textContent();
-            if (divText && divText.trim() && divText !== label && !divText.includes(label)) {
-              return divText.trim();
+      const labelsToTry = [label, ...fallbackLabels];
+
+      for (const labelToTry of labelsToTry) {
+        for (const item of items) {
+          const text = await item.textContent();
+          if (text && text.includes(labelToTry)) {
+            // First try to find separate divs (old structure)
+            const divs = await item.locator('div').all();
+            for (const div of divs) {
+              const divText = await div.textContent();
+              if (divText && divText.trim() && divText !== labelToTry && !divText.includes(labelToTry)) {
+                return divText.trim();
+              }
+            }
+
+            // Fallback: label and value are concatenated, just remove the label
+            if (text.startsWith(labelToTry)) {
+              const value = text.substring(labelToTry.length).trim();
+              if (value) {
+                return value;
+              }
             }
           }
         }
@@ -181,10 +194,30 @@ export class MontrealEvaluationScraper {
       return "";
     };
 
+    // Log all available fields for debugging
+    const allItems = await page.locator('#identification ~ ul li').all();
+    console.log('\n=== Available Identification Fields ===');
+    console.log(`Total items found: ${allItems.length}`);
+    for (const item of allItems) {
+      const text = await item.textContent();
+      if (text) {
+        console.log(`Field: ${text.substring(0, 150)}`);
+      }
+    }
+    console.log('=====================================\n');
+
+    // Try multiple variations for arrondissement
+    const arrondissement = await getText("Arrondissement", [
+      "Arrondissement ou ville liée",
+      "Arrondissement municipal",
+      "Ville liée"
+    ]);
+    console.log(`Extracted Arrondissement: "${arrondissement}"`);
+
     return {
       address: await getText("Adresse"),
-      arrondissement: await getText("Arrondissement"),
-      lot_exclusif: await getText("Numéro de lot"),
+      arrondissement: arrondissement,
+      lot_exclusif: await getText("Numéro de lot", ["Numéro de lot exclusif"]),
       lot_commun: "",
       usage_predominant: await getText("Utilisation prédominante"),
       numero_unite_voisinage: await getText("Numéro d'unité de voisinage"),
@@ -473,7 +506,7 @@ export class MontrealEvaluationScraper {
 
       // Fill street name (autocomplete field)
       await page.locator(SELECTORS.streetName).fill(streetName);
-      await page.waitForTimeout(randomSleep());
+      await page.waitForTimeout(randomSleep() + 5000);
 
       // Wait for autocomplete dropdown to appear and select first option
       try {
