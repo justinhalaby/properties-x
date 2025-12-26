@@ -71,6 +71,12 @@ export default function Dashboard() {
               >
                 Buildings
               </Link>
+              <Link
+                href="/companies"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Companies
+              </Link>
               <Link href="/add-property">
                 <Button size="sm">Add Property</Button>
               </Link>
