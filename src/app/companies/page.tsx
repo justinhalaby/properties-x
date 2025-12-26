@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import type { CompanyWithRelations } from "@/types/company-registry";
 
@@ -8,6 +8,9 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<CompanyWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchCompanies();
@@ -28,6 +31,59 @@ export default function CompaniesPage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setError('Please upload a PDF file');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError(null);
+      setUploadSuccess(null);
+
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      const response = await fetch('/api/companies/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload company');
+      }
+
+      setUploadSuccess(result.message);
+
+      // Refresh companies list
+      await fetchCompanies();
+
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setUploadSuccess(null), 5000);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload PDF');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -54,10 +110,44 @@ export default function CompaniesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Companies & Owners</h1>
-        <p className="text-gray-400">
-          View all companies from the Quebec business registry with their shareholders and administrators
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Companies & Owners</h1>
+            <p className="text-gray-400">
+              View all companies from the Quebec business registry with their shareholders and administrators
+            </p>
+          </div>
+          <div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="application/pdf"
+              className="hidden"
+            />
+            <button
+              onClick={handleUploadClick}
+              disabled={uploading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              {uploading ? 'Uploading...' : '+ Upload Company PDF'}
+            </button>
+          </div>
+        </div>
+
+        {/* Success Message */}
+        {uploadSuccess && (
+          <div className="mt-4 bg-green-900/20 border border-green-900 rounded-lg p-4">
+            <p className="text-green-400">{uploadSuccess}</p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 bg-red-900/20 border border-red-900 rounded-lg p-4">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
       </div>
 
       {companies.length === 0 ? (

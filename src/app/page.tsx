@@ -43,52 +43,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-foreground">
-              properties-x
-            </Link>
-
-            <nav className="flex items-center gap-4">
-              <Link
-                href="/map"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Map View
-              </Link>
-              <Link
-                href="/zones"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Zones
-              </Link>
-              <Link
-                href="/buildings"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Buildings
-              </Link>
-              <Link
-                href="/companies"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Companies
-              </Link>
-              <Link href="/add-property">
-                <Button size="sm">Add Property</Button>
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div className="container mx-auto px-4 py-8">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-card border border-border rounded-xl p-4">
             <p className="text-sm text-muted-foreground">Total Properties</p>
             <p className="text-2xl font-bold">{properties.length}</p>
@@ -127,13 +84,12 @@ export default function Dashboard() {
           </div>
         </form>
 
-        {/* Properties Grid */}
-        <PropertyGrid
-          properties={properties}
-          loading={loading}
-          emptyMessage="No properties yet. Add your first property to get started!"
-        />
-      </main>
+      {/* Properties Grid */}
+      <PropertyGrid
+        properties={properties}
+        loading={loading}
+        emptyMessage="No properties yet. Add your first property to get started!"
+      />
     </div>
   );
 }

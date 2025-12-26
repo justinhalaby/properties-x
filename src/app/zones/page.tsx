@@ -117,26 +117,7 @@ export default function ZonesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold">properties-x</Link>
-            <nav className="flex items-center gap-4">
-              <Link href="/" className="text-muted-foreground hover:text-foreground">
-                Properties
-              </Link>
-              <Link href="/map" className="text-muted-foreground hover:text-foreground">
-                Map
-              </Link>
-              <Link href="/zones" className="text-foreground font-medium">
-                Zones
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+    <>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -194,6 +175,6 @@ export default function ZonesPage() {
           onCancel={() => setPendingZone(null)}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -101,52 +101,19 @@ export default function AddPropertyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-foreground">
-              properties-x
-            </Link>
-            <nav className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                My Properties
-              </Link>
-              <Link
-                href="/map"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Map View
-              </Link>
-              <Link
-                href="/buildings"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Evaluations
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="mb-8">
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Back to Dashboard
+        </Link>
+        <h1 className="text-2xl font-bold mt-2">Add Property</h1>
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold mt-2">Add Property</h1>
-        </div>
-
-        {/* Error Message */}
-        {error && (
+      {/* Error Message */}
+      {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <p className="text-destructive">{error}</p>
             {mode === "url" && (
@@ -348,7 +315,6 @@ export default function AddPropertyPage() {
             </CardContent>
           </Card>
         )}
-      </main>
-    </div>
+      </div>
   );
 }

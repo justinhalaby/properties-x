@@ -61,72 +61,34 @@ export default function BuildingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-foreground">
-              properties-x
-            </Link>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">
+          Montreal Buildings
+        </h1>
+        <p className="text-muted-foreground">
+          Browse 512,000+ buildings and addresses from the Montreal urban
+          community
+        </p>
+      </div>
 
-            <nav className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                My Properties
-              </Link>
-              <Link
-                href="/map"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Map View
-              </Link>
-              <Link
-                href="/buildings"
-                className="text-foreground font-medium"
-              >
-                Buildings
-              </Link>
-              <Link href="/add-property">
-                <Button size="sm">Add Property</Button>
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Stats */}
+      <EvaluationStats total={response?.total || 0} />
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">
-            Montreal Buildings
-          </h1>
-          <p className="text-muted-foreground">
-            Browse 512,000+ buildings and addresses from the Montreal urban
-            community
-          </p>
-        </div>
+      {/* Filters */}
+      <EvaluationFilters
+        filters={filters}
+        onChange={handleFiltersChange}
+        onReset={handleReset}
+      />
 
-        {/* Stats */}
-        <EvaluationStats total={response?.total || 0} />
-
-        {/* Filters */}
-        <EvaluationFilters
-          filters={filters}
-          onChange={handleFiltersChange}
-          onReset={handleReset}
-        />
-
-        {/* Results Table */}
-        <EvaluationTable
-          evaluations={buildings}
-          loading={loading}
-          pagination={response}
-          onPageChange={handlePageChange}
-        />
-      </main>
+      {/* Results Table */}
+      <EvaluationTable
+        evaluations={buildings}
+        loading={loading}
+        pagination={response}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

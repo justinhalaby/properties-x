@@ -170,18 +170,6 @@ export default function ZoneDetailPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold">properties-x</Link>
-            <nav className="flex items-center gap-4">
-              <Link href="/zones" className="text-muted-foreground hover:text-foreground">
-                Back to Zones
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8 flex items-start justify-between">
