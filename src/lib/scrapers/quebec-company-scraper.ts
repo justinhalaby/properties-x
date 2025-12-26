@@ -1,4 +1,4 @@
-import { firefox, Browser, Page } from "playwright";
+import { chromium, Browser, Page } from "playwright";
 import type {
   QuebecCompanyScrapeOptions,
   ScrapedCompanyData,
@@ -17,7 +17,7 @@ export class QuebecCompanyScraper {
    */
   async scrape(options: QuebecCompanyScrapeOptions): Promise<ScrapedCompanyData> {
     try {
-      this.browser = await firefox.launch({
+      this.browser = await chromium.launch({
         headless: false,
         slowMo: 500, // Human-like behavior
       });

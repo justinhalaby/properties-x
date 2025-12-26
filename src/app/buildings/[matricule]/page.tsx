@@ -169,7 +169,25 @@ export default function BuildingDetailPage() {
 
         {/* Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{building.address}</h1>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-3xl font-bold">{building.address}</h1>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(building.address + ', Montreal, QC')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              View on Google Maps
+            </a>
+          </div>
           <p className="text-gray-400 font-mono text-sm">Matricule: {building.matricule}</p>
         </div>
 
