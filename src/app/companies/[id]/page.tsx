@@ -3,14 +3,24 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { CompanyWithRelations } from "@/types/company-registry";
+
+// Dynamically import map to avoid SSR issues with Leaflet
+const CompanyPropertiesMap = dynamic(
+  () => import("@/components/map/company-properties-map").then((mod) => mod.CompanyPropertiesMap),
+  { ssr: false }
+);
 
 interface MatchedProperty {
   matricule: string;
   address: string;
   owner_name: string;
-  evaluated_value: number | null;
+  current_total_value: number | null;
   matchType: 'exact' | 'fuzzy';
+  property_id: string | null;
+  latitude?: number;
+  longitude?: number;
   [key: string]: any;
 }
 
@@ -20,6 +30,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
   useEffect(() => {
     fetchCompanyDetails();
@@ -210,39 +221,90 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Matched Properties */}
       <div className="bg-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-white mb-4">Matched Properties ({matchedProperties.length})</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-white">Matched Properties ({matchedProperties.length})</h3>
+          {matchedProperties.length > 0 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('map')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  viewMode === 'map'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Map View
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                List View
+              </button>
+            </div>
+          )}
+        </div>
+
         {matchedProperties.length > 0 ? (
-          <div className="space-y-2">
-            {matchedProperties.map((property, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-gray-700/50 rounded-lg p-4">
-                <div>
-                  <div className="font-mono text-sm text-white">{property.matricule}</div>
-                  <div className="text-xs text-gray-400 mt-1">{property.address}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Owner: {property.owner_name}
+          <>
+            {viewMode === 'map' ? (
+              <CompanyPropertiesMap
+                properties={matchedProperties.map(p => ({
+                  matricule: p.matricule,
+                  address: p.address,
+                  latitude: p.latitude,
+                  longitude: p.longitude,
+                  matchType: p.matchType,
+                  evaluated_value: p.current_total_value,
+                }))}
+                onPropertyClick={(matricule) => {
+                  // Navigate to building detail page
+                  window.location.href = `/buildings/${matricule}`;
+                }}
+              />
+            ) : (
+              <div className="space-y-2">
+                {matchedProperties.map((property, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                    <div className="flex-1">
+                      <Link
+                        href={property.property_id
+                          ? `/properties/${property.property_id}`
+                          : `/properties?search=${encodeURIComponent(property.matricule)}`
+                        }
+                        className="block"
+                      >
+                        <div className="font-mono text-sm text-white hover:text-blue-400">{property.matricule}</div>
+                        <div className="text-xs text-gray-400 mt-1">{property.address}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Owner: {property.owner_name}
+                        </div>
+                      </Link>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        property.matchType === 'exact'
+                          ? 'bg-green-900/30 text-green-400'
+                          : 'bg-yellow-900/30 text-yellow-400'
+                      }`}>
+                        {property.matchType === 'exact' ? 'Exact Match' : 'Fuzzy Match'}
+                      </span>
+                      <Link
+                        href={`/buildings/${property.matricule}`}
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                      >
+                        View Details →
+                      </Link>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    property.matchType === 'exact'
-                      ? 'bg-green-900/30 text-green-400'
-                      : 'bg-yellow-900/30 text-yellow-400'
-                  }`}>
-                    {property.matchType === 'exact' ? 'Exact Match' : 'Fuzzy Match'}
-                  </span>
-                  {property.evaluated_value && (
-                    <span className="text-xs text-gray-400">
-                      {new Intl.NumberFormat('en-CA', {
-                        style: 'currency',
-                        currency: 'CAD',
-                        maximumFractionDigits: 0,
-                      }).format(property.evaluated_value)}
-                    </span>
-                  )}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <p className="text-sm text-gray-500">No properties matched to this company</p>
         )}

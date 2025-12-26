@@ -42,8 +42,8 @@ export async function GET(
     // 2. Normalize company name for matching
     const normalizedCompanyName = normalizeName(company.company_name);
 
-    // 3. Fetch all properties with owner names
-    const { data: properties, error: propertiesError } = await supabase
+    // 3. Fetch all properties with owner names from montreal_evaluation_details
+    const { data: evaluationProperties, error: propertiesError } = await supabase
       .from('montreal_evaluation_details')
       .select('*')
       .not('owner_name', 'is', null);
@@ -53,12 +53,57 @@ export async function GET(
     }
 
     // 4. Filter properties that match the company name
-    const matchedProperties = (properties || [])
+    const matchedEvaluations = (evaluationProperties || [])
       .map(property => {
         const matchType = matchNames(normalizedCompanyName, property.owner_name || '');
         return matchType ? { ...property, matchType } : null;
       })
       .filter(Boolean);
+
+    // 5. Get coordinates from property_evaluations table for matched properties
+    const matricules = matchedEvaluations.map(p => p.matricule);
+
+    if (matricules.length === 0) {
+      return NextResponse.json({
+        data: [],
+        count: 0
+      });
+    }
+
+    const { data: propertyEvaluations } = await supabase
+      .from('property_evaluations')
+      .select('matricule83, latitude, longitude')
+      .in('matricule83', matricules);
+
+    // Create a map of matricule to coordinates
+    const matriculeToCoordinatesMap = new Map(
+      (propertyEvaluations || []).map(p => [
+        p.matricule83,
+        { latitude: p.latitude, longitude: p.longitude }
+      ])
+    );
+
+    // 6. Try to fetch corresponding property IDs from the properties table
+    const { data: propertiesWithIds } = await supabase
+      .from('properties')
+      .select('id, matricule')
+      .in('matricule', matricules);
+
+    // Create a map of matricule to property ID
+    const matriculeToIdMap = new Map(
+      (propertiesWithIds || []).map(p => [p.matricule, p.id])
+    );
+
+    // 7. Add property ID and coordinates to matched properties
+    const matchedProperties = matchedEvaluations.map(property => {
+      const coords = matriculeToCoordinatesMap.get(property.matricule);
+      return {
+        ...property,
+        property_id: matriculeToIdMap.get(property.matricule) || null,
+        latitude: coords?.latitude || null,
+        longitude: coords?.longitude || null,
+      };
+    });
 
     return NextResponse.json({
       data: matchedProperties,
