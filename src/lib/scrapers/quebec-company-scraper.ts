@@ -17,17 +17,43 @@ export class QuebecCompanyScraper {
    */
   async scrape(options: QuebecCompanyScrapeOptions): Promise<ScrapedCompanyData> {
     try {
-      this.browser = await chromium.launch({
-        headless: false,
-        slowMo: 500, // Human-like behavior
-      });
+      // Get Bright Data credentials from environment
+      const brightDataEnabled = !!(
+        process.env.BRIGHTDATA_PROXY_HOST &&
+        process.env.BRIGHTDATA_PROXY_USERNAME &&
+        process.env.BRIGHTDATA_PROXY_PASSWORD
+      );
+
+      if (!brightDataEnabled) {
+        console.warn('⚠️  Bright Data not configured');
+        console.warn('   Cloudflare bypass will not work automatically');
+        console.warn('   You may need to complete manual verification');
+      }
+
+      if (brightDataEnabled) {
+        // Connect to Bright Data's Scraping Browser via CDP
+        const auth = `${process.env.BRIGHTDATA_PROXY_USERNAME}:${process.env.BRIGHTDATA_PROXY_PASSWORD}`;
+        const cdpUrl = `wss://${auth}@${process.env.BRIGHTDATA_PROXY_HOST}:${process.env.BRIGHTDATA_PROXY_PORT}?brd_block_robots=1`;
+
+        console.log('✓ Connecting to Bright Data Scraping Browser for Cloudflare bypass');
+        this.browser = await chromium.connectOverCDP(cdpUrl);
+      } else {
+        // Fallback to local browser
+        this.browser = await chromium.launch({
+          headless: false,
+          slowMo: 500,
+        });
+      }
 
       const page = await this.browser.newPage();
       await page.setViewportSize({ width: 1920, height: 1080 });
 
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-      });
+      // Only set headers for local browser (not allowed with remote Bright Data browser)
+      if (!brightDataEnabled) {
+        await page.setExtraHTTPHeaders({
+          'Accept-Language': 'fr-FR,fr;q=0.9',
+        });
+      }
 
       // Handle any dialogs
       page.on('dialog', async (dialog) => {
@@ -36,24 +62,34 @@ export class QuebecCompanyScraper {
 
       console.log(`Starting search with ${options.searchType}: ${options.neq || options.companyName}`);
 
-      // Navigate to search page
-      await page.goto(QUEBEC_REGISTRY_URL, {
-        waitUntil: "networkidle",
-        timeout: 30000,
-      });
+      if (brightDataEnabled) {
+        // Navigate via Bright Data - automatic Cloudflare bypass
+        console.log('🌐 Navigating via Bright Data (Cloudflare bypass enabled)...');
+        await page.goto(QUEBEC_REGISTRY_URL, {
+          waitUntil: "networkidle",
+          timeout: 60000,
+        });
+        console.log('✓ Page loaded successfully');
+        const title = await page.title();
+        console.log(`Page title: ${title}`);
+      } else {
+        // Navigate with manual Cloudflare handling
+        await page.goto(QUEBEC_REGISTRY_URL, {
+          waitUntil: "networkidle",
+          timeout: 30000,
+        });
 
-      // Wait for Cloudflare challenge to complete
-      console.log('⏳ Waiting for Cloudflare verification...');
-      await page.waitForTimeout(5000); // Give Cloudflare time to complete
+        // Wait for Cloudflare challenge to complete
+        console.log('⏳ Waiting for Cloudflare verification...');
+        await page.waitForTimeout(5000);
 
-      // Check if we're still on Cloudflare challenge page
-      const pageContent = await page.textContent('body');
-      if (pageContent && pageContent.includes('Cloudflare')) {
-        console.log('🔒 Cloudflare detected, waiting for manual verification...');
-        console.log('   Please complete the verification in the browser window');
-
-        // Wait up to 30 seconds for user to complete verification
-        await page.waitForTimeout(30000);
+        // Check if we're still on Cloudflare challenge page
+        const pageContent = await page.textContent('body');
+        if (pageContent && pageContent.includes('Cloudflare')) {
+          console.log('🔒 Cloudflare detected, waiting for manual verification...');
+          console.log('   Please complete the verification in the browser window');
+          await page.waitForTimeout(30000);
+        }
       }
 
       // Remove any modals
