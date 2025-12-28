@@ -127,15 +127,33 @@ export async function GET(
 /**
  * Normalizes a company/owner name for comparison
  * - Converts to lowercase
- * - Removes extra spaces
- * - Removes common punctuation
+ * - Removes accents
+ * - Removes punctuation
+ * - Normalizes spaces
+ * - Collapses single-letter abbreviations
+ * - Removes French/English articles
  */
 function normalizeName(name: string): string {
-  return name
+  let normalized = name
     .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .replace(/[.,]/g, '')
-    .trim();
+    .trim()
+    .normalize('NFD') // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics (accents)
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .replace(/\b([a-z])\s+([a-z])\s+([a-z])\b/g, '$1$2$3') // L L C → LLC
+    .replace(/\b([a-z])\s+([a-z])\b/g, '$1$2'); // L L → LL
+
+  // Remove common French/English articles and prefixes
+  const articlesToRemove = ['les ', 'la ', 'le ', 'the ', 'l '];
+  for (const article of articlesToRemove) {
+    if (normalized.startsWith(article)) {
+      normalized = normalized.substring(article.length);
+      break;
+    }
+  }
+
+  return normalized;
 }
 
 /**
