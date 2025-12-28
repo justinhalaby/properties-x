@@ -157,8 +157,26 @@
     let foundAdminSection = false;
     const allLists = doc.querySelectorAll('ul.kx-synthese');
 
+    // Track whether we're in the historical section
+    let inHistoricalSection = false;
+
     for (let i = 0; i < allLists.length; i++) {
       const list = allLists[i];
+
+      // Check if this list is inside a historical accordion
+      let parent = list.parentElement;
+      while (parent && parent !== doc.body) {
+        if (parent.classList && parent.classList.contains('accordion')) {
+          // Check if the accordion has "Historique" heading
+          const heading = parent.querySelector('.h b, .h strong');
+          if (heading && heading.textContent.includes('Historique')) {
+            inHistoricalSection = true;
+          }
+          break;
+        }
+        parent = parent.parentElement;
+      }
+
       const labels = list.querySelectorAll('.kx-display-label');
 
       let hasNomDeFamille = false;
@@ -176,6 +194,8 @@
         const firstName = getFieldValue(list, 'Prénom');
         const position = getFieldValue(list, 'Fonctions actuelles');
         const domicileAddress = getFieldValue(list, 'Adresse du domicile');
+        const dateStart = getFieldValue(list, 'Date du début de la charge');
+        const dateEnd = getFieldValue(list, 'Date de la fin de la charge');
 
         if (lastName) {
           const fullName = (firstName + ' ' + lastName).trim();
@@ -189,16 +209,77 @@
             domicile_address: cleanDomicile,
             professional_address: '',
             position_order: administrators.length + 1,
+            is_historical: inHistoricalSection,
+            date_start: dateStart || '',
+            date_end: dateEnd || '',
           });
         }
       }
 
-      if (foundAdminSection && !hasNomDeFamille) {
+      if (foundAdminSection && !hasNomDeFamille && !inHistoricalSection) {
+        break;
+      }
+
+      // Reset historical flag for next iteration
+      inHistoricalSection = false;
+    }
+
+    return administrators;
+  }
+
+  function extractBeneficialOwners(doc) {
+    const beneficialOwners = [];
+    let foundBeneficialOwnerSection = false;
+    const allLists = doc.querySelectorAll('ul.kx-synthese');
+
+    // Check if there's a beneficial owners section
+    const hasBeneficialOwnersSection = Array.from(doc.querySelectorAll('h4')).some(h =>
+      h.textContent.includes('bénéficiaires ultimes')
+    );
+
+    if (!hasBeneficialOwnersSection) {
+      return []; // No beneficial owners section found
+    }
+
+    for (let i = 0; i < allLists.length; i++) {
+      const list = allLists[i];
+      const labels = Array.from(list.querySelectorAll('.kx-display-label')).map(l => l.textContent.trim());
+
+      // Check if this list has beneficial owner-specific fields
+      const hasBeneficialOwnerFields = labels.some(l =>
+        l.includes('Date du début du statut') ||
+        l.includes('Situations applicables')
+      );
+
+      if (hasBeneficialOwnerFields) {
+        foundBeneficialOwnerSection = true;
+        const lastName = getFieldValue(list, 'Nom de famille');
+        const firstName = getFieldValue(list, 'Prénom');
+        const otherNames = getFieldValue(list, 'Autres noms utilisés');
+        const statusStartDate = getFieldValue(list, 'Date du début du statut');
+        const applicableSituations = getFieldValue(list, 'Situations applicables au bénéficiaire ultime');
+        const domicileAddress = getFieldValue(list, 'Adresse du domicile');
+
+        if (lastName || firstName) {
+          beneficialOwners.push({
+            first_name: firstName || '',
+            last_name: lastName || '',
+            other_names: otherNames || '',
+            status_start_date: statusStartDate || '',
+            applicable_situations: applicableSituations || '',
+            domicile_address: domicileAddress && domicileAddress.toLowerCase().includes('non publiable')
+              ? ''
+              : domicileAddress || '',
+            position_order: beneficialOwners.length + 1,
+          });
+        }
+      } else if (foundBeneficialOwnerSection && !hasBeneficialOwnerFields) {
+        // We've moved past the beneficial owners section
         break;
       }
     }
 
-    return administrators;
+    return beneficialOwners;
   }
 
   function extractEconomicActivity(doc) {
@@ -338,6 +419,7 @@
         identification: extractIdentification(document),
         shareholders: extractShareholders(document),
         administrators: extractAdministrators(document),
+        beneficial_owners: extractBeneficialOwners(document),
         economic_activity: extractEconomicActivity(document),
         source_url: window.location.href,
       };

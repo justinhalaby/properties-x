@@ -7,6 +7,7 @@ import type {
   CompanyInsert,
   ShareholderInsert,
   AdministratorInsert,
+  BeneficialOwnerInsert,
 } from "@/types/company-registry";
 
 /**
@@ -133,6 +134,10 @@ export async function saveCompanyData(
         professional_province: parsedProfessional?.province || null,
         professional_postal_code: parsedProfessional?.postal_code || null,
         address_publishable: parsedProfessional?.publishable ?? true,
+        // Historical tracking
+        is_historical: a.is_historical ?? false,
+        date_start: a.date_start || null,
+        date_end: a.date_end || null,
       };
     });
 
@@ -150,6 +155,48 @@ export async function saveCompanyData(
     console.log(`✓ Saved ${administratorInserts.length} administrator(s)`);
   } else {
     console.log('No administrators to save');
+  }
+
+  // 4. Insert beneficial owners
+  if (scrapedData.beneficial_owners && scrapedData.beneficial_owners.length > 0) {
+    const beneficialOwnerInserts: BeneficialOwnerInsert[] = scrapedData.beneficial_owners.map((b) => {
+      const parsed = b.domicile_address ? parseAddress(b.domicile_address) : null;
+      const fullName = (b.first_name + ' ' + b.last_name).trim();
+
+      return {
+        company_id: company.id,
+        owner_name: fullName,
+        first_name: b.first_name || null,
+        last_name: b.last_name || null,
+        other_names: b.other_names || null,
+        status_start_date: b.status_start_date || null,
+        applicable_situations: b.applicable_situations || null,
+        domicile_address: b.domicile_address || null,
+        street_number: parsed?.street_number || null,
+        street_name: parsed?.street_name || null,
+        unit: parsed?.unit || null,
+        city: parsed?.city || null,
+        province: parsed?.province || null,
+        postal_code: parsed?.postal_code || null,
+        address_publishable: parsed?.publishable ?? true,
+        position_order: b.position_order,
+      };
+    });
+
+    const { error: beneficialOwnersError } = await supabase
+      .from('company_beneficial_owners')
+      .insert(beneficialOwnerInserts);
+
+    if (beneficialOwnersError) {
+      console.error('Failed to insert beneficial owners:', beneficialOwnersError);
+      // Attempt to rollback company, shareholders, and administrators
+      await supabase.from('companies').delete().eq('id', company.id);
+      throw new Error(`Failed to save beneficial owners: ${beneficialOwnersError.message}`);
+    }
+
+    console.log(`✓ Saved ${beneficialOwnerInserts.length} beneficial owner(s)`);
+  } else {
+    console.log('No beneficial owners to save');
   }
 
   console.log(`✓ Successfully saved complete company data for ${company.company_name}`);
@@ -214,10 +261,11 @@ export async function updateCompanyData(
     throw new Error(`Failed to update company: ${updateError.message}`);
   }
 
-  // Delete old shareholders and administrators (CASCADE will handle this)
+  // Delete old shareholders, administrators, and beneficial owners (CASCADE will handle this)
   // Then re-insert new ones
   await supabase.from('company_shareholders').delete().eq('company_id', companyId);
   await supabase.from('company_administrators').delete().eq('company_id', companyId);
+  await supabase.from('company_beneficial_owners').delete().eq('company_id', companyId);
 
   // Re-insert shareholders
   if (scrapedData.shareholders.length > 0) {
@@ -277,10 +325,43 @@ export async function updateCompanyData(
         professional_province: parsedProfessional?.province || null,
         professional_postal_code: parsedProfessional?.postal_code || null,
         address_publishable: parsedProfessional?.publishable ?? true,
+        // Historical tracking
+        is_historical: a.is_historical ?? false,
+        date_start: a.date_start || null,
+        date_end: a.date_end || null,
       };
     });
 
     await supabase.from('company_administrators').insert(administratorInserts);
+  }
+
+  // Re-insert beneficial owners
+  if (scrapedData.beneficial_owners && scrapedData.beneficial_owners.length > 0) {
+    const beneficialOwnerInserts: BeneficialOwnerInsert[] = scrapedData.beneficial_owners.map((b) => {
+      const parsed = b.domicile_address ? parseAddress(b.domicile_address) : null;
+      const fullName = (b.first_name + ' ' + b.last_name).trim();
+
+      return {
+        company_id: companyId,
+        owner_name: fullName,
+        first_name: b.first_name || null,
+        last_name: b.last_name || null,
+        other_names: b.other_names || null,
+        status_start_date: b.status_start_date || null,
+        applicable_situations: b.applicable_situations || null,
+        domicile_address: b.domicile_address || null,
+        street_number: parsed?.street_number || null,
+        street_name: parsed?.street_name || null,
+        unit: parsed?.unit || null,
+        city: parsed?.city || null,
+        province: parsed?.province || null,
+        postal_code: parsed?.postal_code || null,
+        address_publishable: parsed?.publishable ?? true,
+        position_order: b.position_order,
+      };
+    });
+
+    await supabase.from('company_beneficial_owners').insert(beneficialOwnerInserts);
   }
 
   console.log(`✓ Successfully updated company data`);

@@ -119,7 +119,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Company Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
         <div className="bg-gray-800 rounded-lg p-6">
           <h3 className="text-sm font-medium text-gray-400 mb-4">Company Information</h3>
           <dl className="space-y-3">
@@ -143,10 +143,12 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Shareholders ({company.shareholders?.length || 0})</h3>
+          <h3 className="text-sm font-medium text-gray-400 mb-4">
+            Shareholders ({company.shareholders?.filter((s: any) => !s.is_historical).length || 0})
+          </h3>
           <div className="space-y-3">
-            {company.shareholders && company.shareholders.length > 0 ? (
-              company.shareholders.map((shareholder, idx) => (
+            {company.shareholders && company.shareholders.filter((s: any) => !s.is_historical).length > 0 ? (
+              company.shareholders.filter((s: any) => !s.is_historical).map((shareholder, idx) => (
                 <div key={idx} className="border-l-2 border-gray-700 pl-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-medium text-white">{shareholder.shareholder_name}</div>
@@ -175,10 +177,12 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Administrators ({company.administrators?.length || 0})</h3>
+          <h3 className="text-sm font-medium text-gray-400 mb-4">
+            Administrators ({company.administrators?.filter((a: any) => !a.is_historical).length || 0})
+          </h3>
           <div className="space-y-4">
-            {company.administrators && company.administrators.length > 0 ? (
-              company.administrators.map((admin, idx) => (
+            {company.administrators && company.administrators.filter((a: any) => !a.is_historical).length > 0 ? (
+              company.administrators.filter((a: any) => !a.is_historical).map((admin, idx) => (
                 <div key={idx} className="border-l-2 border-gray-700 pl-3">
                   <div className="text-sm font-medium text-white">{admin.administrator_name}</div>
                   <div className="text-xs text-gray-500 mb-2">{admin.position_title}</div>
@@ -217,7 +221,108 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             )}
           </div>
         </div>
+
+        <div className="bg-gray-800 rounded-lg p-6">
+          <h3 className="text-sm font-medium text-gray-400 mb-4">
+            Beneficial Owners ({company.beneficial_owners?.filter((b: any) => !b.is_historical).length || 0})
+          </h3>
+          <div className="space-y-3">
+            {company.beneficial_owners && company.beneficial_owners.filter((b: any) => !b.is_historical).length > 0 ? (
+              company.beneficial_owners.filter((b: any) => !b.is_historical).map((owner: any, idx: number) => (
+                <div key={idx} className="border-l-2 border-gray-700 pl-3">
+                  <div className="text-sm font-medium text-white">{owner.owner_name}</div>
+                  {owner.applicable_situations && (
+                    <div className="text-xs text-gray-500 mt-1">{owner.applicable_situations}</div>
+                  )}
+                  {owner.status_start_date && (
+                    <div className="text-xs text-gray-600 mt-1">Since: {owner.status_start_date}</div>
+                  )}
+                  {owner.domicile_address && owner.address_publishable && (
+                    <div className="text-xs text-gray-400 mt-1">{owner.domicile_address}</div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No beneficial owners listed</p>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Historical Records */}
+      {(company.shareholders?.some((s: any) => s.is_historical) ||
+        company.administrators?.some((a: any) => a.is_historical) ||
+        company.beneficial_owners?.some((b: any) => b.is_historical)) && (
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-medium text-white mb-4">Historical Records</h3>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Historical Shareholders */}
+            {company.shareholders?.some((s: any) => s.is_historical) && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-400 mb-3">
+                  Former Shareholders ({company.shareholders.filter((s: any) => s.is_historical).length})
+                </h4>
+                <div className="space-y-3">
+                  {company.shareholders.filter((s: any) => s.is_historical).map((shareholder, idx) => (
+                    <div key={idx} className="border-l-2 border-gray-600 pl-3 opacity-70">
+                      <div className="text-sm font-medium text-white">{shareholder.shareholder_name}</div>
+                      {(shareholder as any).date_end && (
+                        <div className="text-xs text-red-400 mt-1">Ended: {(shareholder as any).date_end}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Historical Administrators */}
+            {company.administrators?.some((a: any) => a.is_historical) && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-400 mb-3">
+                  Former Administrators ({company.administrators.filter((a: any) => a.is_historical).length})
+                </h4>
+                <div className="space-y-3">
+                  {company.administrators.filter((a: any) => a.is_historical).map((admin, idx) => (
+                    <div key={idx} className="border-l-2 border-gray-600 pl-3 opacity-70">
+                      <div className="text-sm font-medium text-white">{admin.administrator_name}</div>
+                      <div className="text-xs text-gray-500">{admin.position_title}</div>
+                      {(admin as any).date_start && (
+                        <div className="text-xs text-gray-600 mt-1">Started: {(admin as any).date_start}</div>
+                      )}
+                      {(admin as any).date_end && (
+                        <div className="text-xs text-red-400 mt-1">Ended: {(admin as any).date_end}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Historical Beneficial Owners */}
+            {company.beneficial_owners?.some((b: any) => b.is_historical) && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-400 mb-3">
+                  Former Beneficial Owners ({company.beneficial_owners.filter((b: any) => b.is_historical).length})
+                </h4>
+                <div className="space-y-3">
+                  {company.beneficial_owners.filter((b: any) => b.is_historical).map((owner: any, idx: number) => (
+                    <div key={idx} className="border-l-2 border-gray-600 pl-3 opacity-70">
+                      <div className="text-sm font-medium text-white">{owner.owner_name}</div>
+                      {owner.status_start_date && (
+                        <div className="text-xs text-gray-600 mt-1">Started: {owner.status_start_date}</div>
+                      )}
+                      {owner.date_end && (
+                        <div className="text-xs text-red-400 mt-1">Ended: {owner.date_end}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Matched Properties */}
       <div className="bg-gray-800 rounded-lg p-6">

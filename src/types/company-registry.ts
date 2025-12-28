@@ -77,6 +77,29 @@ export interface CompanyAdministrator {
   scraped_at: string;
 }
 
+export interface CompanyBeneficialOwner {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  company_id: string;
+  owner_name: string;
+  first_name: string | null;
+  last_name: string | null;
+  other_names: string | null;
+  status_start_date: string | null;
+  applicable_situations: string | null;
+  domicile_address: string | null;
+  street_number: string | null;
+  street_name: string | null;
+  unit: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  address_publishable: boolean;
+  position_order: number | null;
+  scraped_at: string;
+}
+
 export interface PropertyCompanyLink {
   id: string;
   created_at: string;
@@ -94,6 +117,7 @@ export interface PropertyCompanyLink {
 export interface CompanyWithRelations extends Company {
   shareholders: CompanyShareholder[];
   administrators: CompanyAdministrator[];
+  beneficial_owners?: CompanyBeneficialOwner[];
   property_links?: PropertyCompanyLink[];
 }
 
@@ -120,6 +144,19 @@ export interface ScrapedAdministratorData {
   domicile_address: string; // Home address (often "Adresse non publiable")
   professional_address: string; // Business address
   position_order: number;
+  is_historical?: boolean; // True if from "Historique" section
+  date_start?: string; // "Date du début de la charge"
+  date_end?: string; // "Date de la fin de la charge"
+}
+
+export interface ScrapedBeneficialOwnerData {
+  first_name: string;
+  last_name: string;
+  other_names: string; // "Autres noms utilisés"
+  status_start_date: string; // "Date du début du statut"
+  applicable_situations: string; // "Situations applicables au bénéficiaire ultime"
+  domicile_address: string; // "Adresse du domicile"
+  position_order: number;
 }
 
 export interface ScrapedCompanyData {
@@ -133,6 +170,7 @@ export interface ScrapedCompanyData {
   };
   shareholders: ScrapedShareholderData[];
   administrators: ScrapedAdministratorData[];
+  beneficial_owners?: ScrapedBeneficialOwnerData[];
   economic_activity: {
     cae_code: string;
     cae_description: string;
@@ -225,6 +263,8 @@ export interface ShareholderInsert {
   province?: string | null;
   postal_code?: string | null;
   address_publishable?: boolean;
+  is_historical?: boolean;
+  date_end?: string | null;
 }
 
 export interface AdministratorInsert {
@@ -250,6 +290,31 @@ export interface AdministratorInsert {
   professional_province?: string | null;
   professional_postal_code?: string | null;
   address_publishable?: boolean;
+  // Historical tracking
+  is_historical?: boolean;
+  date_start?: string | null;
+  date_end?: string | null;
+}
+
+export interface BeneficialOwnerInsert {
+  company_id: string;
+  owner_name: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  other_names?: string | null;
+  status_start_date?: string | null;
+  applicable_situations?: string | null;
+  domicile_address?: string | null;
+  street_number?: string | null;
+  street_name?: string | null;
+  unit?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
+  address_publishable?: boolean;
+  position_order?: number | null;
+  is_historical?: boolean;
+  date_end?: string | null;
 }
 
 // ============================================================================

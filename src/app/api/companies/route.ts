@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * GET /api/companies
  *
- * Retrieves all companies with their shareholders and administrators
+ * Retrieves all companies with their shareholders, administrators, and beneficial owners
  *
  * Response:
  * {
@@ -21,6 +21,7 @@ export async function GET() {
         *,
         shareholders:company_shareholders(*),
         administrators:company_administrators(*),
+        beneficial_owners:company_beneficial_owners(*),
         property_links:property_company_links(*)
       `)
       .order('created_at', { ascending: false });
