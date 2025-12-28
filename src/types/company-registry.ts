@@ -251,3 +251,19 @@ export interface AdministratorInsert {
   professional_postal_code?: string | null;
   address_publishable?: boolean;
 }
+
+// ============================================================================
+// BOOKMARKLET TYPES
+// ============================================================================
+
+export interface BookmarkletApiRequest {
+  scrapedData: ScrapedCompanyData;
+}
+
+export interface BookmarkletApiResponse {
+  success: boolean;
+  companyId?: string;
+  message: string;
+  fromCache?: boolean;
+  error?: string;
+}

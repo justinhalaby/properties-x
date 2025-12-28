@@ -33,7 +33,7 @@ export class QuebecCompanyScraper {
       if (brightDataEnabled) {
         // Connect to Bright Data's Scraping Browser via CDP
         const auth = `${process.env.BRIGHTDATA_PROXY_USERNAME}:${process.env.BRIGHTDATA_PROXY_PASSWORD}`;
-        const cdpUrl = `wss://${auth}@${process.env.BRIGHTDATA_PROXY_HOST}:${process.env.BRIGHTDATA_PROXY_PORT}?brd_block_robots=1`;
+        const cdpUrl = `wss://${auth}@${process.env.BRIGHTDATA_PROXY_HOST}:${process.env.BRIGHTDATA_PROXY_PORT}?brd_block_robots=0`;
 
         console.log('✓ Connecting to Bright Data Scraping Browser for Cloudflare bypass');
         this.browser = await chromium.connectOverCDP(cdpUrl);
@@ -215,27 +215,42 @@ export class QuebecCompanyScraper {
 
   /**
    * Extracts the NEQ from the details page
+   * Uses the same DOM extraction logic as the bookmarklet
    */
   private async scrapeNEQ(page: Page): Promise<string> {
-    // Look for NEQ in the identification section
-    const neqText = await page.locator('text=/Numéro\\s+d.entreprise\\s+du\\s+Québec/i').locator('xpath=following-sibling::*[1]').textContent().catch(() => '');
+    return await page.evaluate(() => {
+      function getFieldValue(root: Document | Element, labelText: string): string {
+        const labels = root.querySelectorAll('.kx-display-label');
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels[i];
+          const text = (label.textContent || '').trim();
+          const regex = new RegExp('^' + labelText.replace(/[()]/g, '\\$&') + '$', 'i');
 
-    if (neqText && neqText.trim()) {
-      return neqText.trim();
-    }
+          if (regex.test(text)) {
+            let sibling = label.nextElementSibling;
+            while (sibling) {
+              if (sibling.classList && sibling.classList.contains('kx-display-field')) {
+                return (sibling.textContent || '').trim();
+              }
+              sibling = sibling.nextElementSibling;
+            }
+          }
+        }
+        return '';
+      }
 
-    // Fallback: extract from page content using regex
-    const pageText = await page.textContent('body');
-    const neqMatch = pageText?.match(/\b(\d{10})\b/);
-    if (neqMatch) {
-      return neqMatch[1];
-    }
+      const neq = getFieldValue(document, "Numéro d'entreprise du Québec (NEQ)");
+      if (neq) return neq;
 
-    throw new Error("Could not find NEQ on page");
+      const bodyText = document.body.textContent || '';
+      const neqMatch = bodyText.match(/\b(\d{10})\b/);
+      return neqMatch ? neqMatch[1] : '';
+    });
   }
 
   /**
    * Extracts company identification information
+   * Uses the same DOM extraction logic as the bookmarklet
    */
   private async scrapeIdentification(page: Page): Promise<{
     name: string;
@@ -244,163 +259,226 @@ export class QuebecCompanyScraper {
     registration_date: string;
     status_date?: string;
   }> {
-    const getText = async (label: string): Promise<string> => {
-      try {
-        const labelElement = page.locator(`text=/^${label}/i`).first();
-        const value = await labelElement.locator('xpath=following-sibling::*[1]').textContent();
-        return value?.trim() || '';
-      } catch {
+    return await page.evaluate(() => {
+      function getFieldValue(root: Document | Element, labelText: string): string {
+        const labels = root.querySelectorAll('.kx-display-label');
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels[i];
+          const text = (label.textContent || '').trim();
+          const regex = new RegExp('^' + labelText.replace(/[()]/g, '\\$&') + '$', 'i');
+
+          if (regex.test(text)) {
+            let sibling = label.nextElementSibling;
+            while (sibling) {
+              if (sibling.classList && sibling.classList.contains('kx-display-field')) {
+                return (sibling.textContent || '').trim();
+              }
+              sibling = sibling.nextElementSibling;
+            }
+          }
+        }
         return '';
       }
-    };
 
-    return {
-      name: await getText('Nom'),
-      status: await getText('Statut'),
-      domicile_address: await getText('Adresse'),
-      registration_date: await getText("Date d'immatriculation"),
-      status_date: await getText("Date de mise à jour du statut"),
-    };
+      return {
+        name: getFieldValue(document, 'Nom'),
+        status: getFieldValue(document, 'Statut'),
+        domicile_address: getFieldValue(document, 'Adresse'),
+        registration_date: getFieldValue(document, "Date d'immatriculation"),
+        status_date: getFieldValue(document, "Date de mise à jour du statut") || undefined,
+      };
+    });
   }
 
   /**
    * Extracts shareholders (Actionnaires) from the details page
-   * Handles variable number of shareholders dynamically
+   * Uses the same DOM extraction logic as the bookmarklet
    */
   private async scrapeShareholders(page: Page): Promise<ScrapedShareholderData[]> {
-    const shareholders: ScrapedShareholderData[] = [];
+    const shareholders = await page.evaluate(() => {
+      function getFieldValue(root: Document | Element, labelText: string): string {
+        const labels = root.querySelectorAll('.kx-display-label');
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels[i];
+          const text = (label.textContent || '').trim();
+          const regex = new RegExp('^' + labelText.replace(/[()]/g, '\\$&') + '$', 'i');
 
-    // Find the shareholders section heading
-    const shareholdersHeading = page.locator('text=/^Actionnaires$/i').first();
-
-    if (await shareholdersHeading.count() === 0) {
-      console.log('No shareholders section found');
-      return [];
-    }
-
-    // Get all content after the "Actionnaires" heading
-    // Look for patterns like "Premier actionnaire", "Deuxième actionnaire", etc.
-    const positions = [
-      'Premier actionnaire',
-      'Deuxième actionnaire',
-      'Troisième actionnaire',
-      'Quatrième actionnaire',
-      'Cinquième actionnaire',
-    ];
-
-    for (let i = 0; i < positions.length; i++) {
-      const positionLabel = positions[i];
-      const positionElement = page.locator(`text=/^${positionLabel}/i`).first();
-
-      if (await positionElement.count() === 0) {
-        break; // No more shareholders
+          if (regex.test(text)) {
+            let sibling = label.nextElementSibling;
+            while (sibling) {
+              if (sibling.classList && sibling.classList.contains('kx-display-field')) {
+                return (sibling.textContent || '').trim();
+              }
+              sibling = sibling.nextElementSibling;
+            }
+          }
+        }
+        return '';
       }
 
-      // Extract name and address for this shareholder
-      const container = positionElement.locator('xpath=ancestor::*[contains(@class, "") or position()=1]').first();
+      const shareholders: any[] = [];
+      const positions = [
+        'Premier actionnaire',
+        'Deuxième actionnaire',
+        'Troisième actionnaire',
+        'Quatrième actionnaire',
+        'Cinquième actionnaire',
+      ];
 
-      const name = await this.extractFieldValue(container, 'Nom');
-      const address = await this.extractFieldValue(container, 'Adresse du domicile');
-      const majorityText = await container.textContent();
-      const isMajority = majorityText ? majorityText.includes('majoritaire') : false;
+      const allLists = document.querySelectorAll('ul.kx-synthese');
+      for (let i = 0; i < allLists.length; i++) {
+        const list = allLists[i];
+        const firstLabel = list.querySelector('.kx-display-label');
+        if (!firstLabel) continue;
 
-      if (name) {
-        shareholders.push({
-          name,
-          address: address || '',
-          is_majority: isMajority,
-          position: i + 1,
-        });
+        const text = firstLabel.textContent?.trim() || '';
+        for (let j = 0; j < positions.length; j++) {
+          if (text.includes(positions[j])) {
+            const lastName = getFieldValue(list, 'Nom de famille');
+            const firstName = getFieldValue(list, 'Prénom');
+            const address = getFieldValue(list, 'Adresse du domicile');
+            const isMajority = list.textContent?.includes('majoritaire') || false;
 
-        console.log(`  Found shareholder ${i + 1}: ${name}`);
+            if (lastName || firstName) {
+              shareholders.push({
+                name: (firstName + ' ' + lastName).trim(),
+                address: address || '',
+                is_majority: isMajority,
+                position: j + 1,
+              });
+            }
+            break;
+          }
+        }
       }
-    }
+
+      return shareholders;
+    });
+
+    shareholders.forEach((shareholder, i) => {
+      console.log(`  Found shareholder ${i + 1}: ${shareholder.name}`);
+    });
 
     return shareholders;
   }
 
   /**
    * Extracts administrators from the details page
-   * Handles variable number of administrators dynamically
+   * Uses the same DOM extraction logic as the bookmarklet
    */
   private async scrapeAdministrators(page: Page): Promise<ScrapedAdministratorData[]> {
-    const administrators: ScrapedAdministratorData[] = [];
+    const administrators = await page.evaluate(() => {
+      function getFieldValue(root: Document | Element, labelText: string): string {
+        const labels = root.querySelectorAll('.kx-display-label');
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels[i];
+          const text = (label.textContent || '').trim();
+          const regex = new RegExp('^' + labelText.replace(/[()]/g, '\\$&') + '$', 'i');
 
-    // Find the administrators section
-    const adminHeading = page.locator('text=/Administrateurs$/i').first();
-
-    if (await adminHeading.count() === 0) {
-      console.log('No administrators section found');
-      return [];
-    }
-
-    // Look for list items or sections with administrator data
-    // Administrators usually have: Name, Position, Domicile Address, Professional Address
-
-    // Try to find all administrator entries (they usually have a lastName/firstName pattern)
-    const nameLabels = await page.locator('text=/^Nom de famille$/i').all();
-
-    for (let i = 0; i < nameLabels.length; i++) {
-      const container = nameLabels[i].locator('xpath=ancestor::*[contains(@class, "") or position()=2]').first();
-
-      const lastName = await this.extractFieldValue(container, 'Nom de famille');
-      const firstName = await this.extractFieldValue(container, 'Prénom');
-      const position = await this.extractFieldValue(container, 'Fonctions actuelles');
-      const domicileAddress = await this.extractFieldValue(container, 'Adresse du domicile');
-      const professionalAddress = await this.extractFieldValue(container, 'Adresse professionnelle');
-
-      if (lastName) {
-        const fullName = `${firstName} ${lastName}`.trim();
-
-        // Clean up addresses - if "non publiable", store as empty string
-        const cleanDomicile = domicileAddress && domicileAddress.toLowerCase().includes('non publiable')
-          ? ''
-          : (domicileAddress || '');
-        const cleanProfessional = professionalAddress && professionalAddress.toLowerCase().includes('non publiable')
-          ? ''
-          : (professionalAddress || '');
-
-        administrators.push({
-          name: fullName,
-          position_title: position || '',
-          domicile_address: cleanDomicile,
-          professional_address: cleanProfessional,
-          position_order: i + 1,
-        });
-
-        console.log(`  Found administrator ${i + 1}: ${fullName} (${position})`);
+          if (regex.test(text)) {
+            let sibling = label.nextElementSibling;
+            while (sibling) {
+              if (sibling.classList && sibling.classList.contains('kx-display-field')) {
+                return (sibling.textContent || '').trim();
+              }
+              sibling = sibling.nextElementSibling;
+            }
+          }
+        }
+        return '';
       }
-    }
+
+      const administrators: any[] = [];
+      let foundAdminSection = false;
+      const allLists = document.querySelectorAll('ul.kx-synthese');
+
+      for (let i = 0; i < allLists.length; i++) {
+        const list = allLists[i];
+        const labels = list.querySelectorAll('.kx-display-label');
+
+        let hasNomDeFamille = false;
+        let hasFonctions = false;
+
+        for (let j = 0; j < labels.length; j++) {
+          const labelText = labels[j].textContent?.trim() || '';
+          if (labelText === 'Nom de famille') hasNomDeFamille = true;
+          if (labelText === 'Fonctions actuelles') hasFonctions = true;
+        }
+
+        if (hasNomDeFamille && hasFonctions) {
+          foundAdminSection = true;
+          const lastName = getFieldValue(list, 'Nom de famille');
+          const firstName = getFieldValue(list, 'Prénom');
+          const position = getFieldValue(list, 'Fonctions actuelles');
+          const domicileAddress = getFieldValue(list, 'Adresse du domicile');
+
+          if (lastName) {
+            const fullName = (firstName + ' ' + lastName).trim();
+            const cleanDomicile = domicileAddress && domicileAddress.toLowerCase().includes('non publiable')
+              ? ''
+              : domicileAddress || '';
+
+            administrators.push({
+              name: fullName,
+              position_title: position || '',
+              domicile_address: cleanDomicile,
+              professional_address: '',
+              position_order: administrators.length + 1,
+            });
+          }
+        }
+
+        if (foundAdminSection && !hasNomDeFamille) {
+          break;
+        }
+      }
+
+      return administrators;
+    });
+
+    administrators.forEach((admin, i) => {
+      console.log(`  Found administrator ${i + 1}: ${admin.name} (${admin.position_title})`);
+    });
 
     return administrators;
   }
 
   /**
    * Extracts economic activity information
+   * Uses the same DOM extraction logic as the bookmarklet
    */
   private async scrapeEconomicActivity(page: Page): Promise<{
     cae_code: string;
     cae_description: string;
   }> {
-    const caeCode = await this.extractFieldValue(page, "Code d'activité économique");
-    const caeDescription = await this.extractFieldValue(page, 'Activité');
+    return await page.evaluate(() => {
+      function getFieldValue(root: Document | Element, labelText: string): string {
+        const labels = root.querySelectorAll('.kx-display-label');
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels[i];
+          const text = (label.textContent || '').trim();
+          const regex = new RegExp('^' + labelText.replace(/[()]/g, '\\$&') + '$', 'i');
 
-    return {
-      cae_code: caeCode || '',
-      cae_description: caeDescription || '',
-    };
-  }
+          if (regex.test(text)) {
+            let sibling = label.nextElementSibling;
+            while (sibling) {
+              if (sibling.classList && sibling.classList.contains('kx-display-field')) {
+                return (sibling.textContent || '').trim();
+              }
+              sibling = sibling.nextElementSibling;
+            }
+          }
+        }
+        return '';
+      }
 
-  /**
-   * Helper to extract field value by label
-   */
-  private async extractFieldValue(container: any, label: string): Promise<string> {
-    try {
-      const labelElement = container.locator(`text=/^${label}/i`).first();
-      const value = await labelElement.locator('xpath=following-sibling::*[1]').textContent();
-      return value?.trim() || '';
-    } catch {
-      return '';
-    }
+      const caeCode = getFieldValue(document, "Code d'activité économique (CAE)");
+      const caeDescription = getFieldValue(document, 'Activité');
+
+      return {
+        cae_code: caeCode || '',
+        cae_description: caeDescription || '',
+      };
+    });
   }
 }
