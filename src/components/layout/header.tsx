@@ -37,6 +37,12 @@ export function Header() {
             >
               Companies
             </Link>
+            <Link
+              href="/rentals"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Rentals
+            </Link>
             <Link href="/add-property">
               <Button size="sm">Add Property</Button>
             </Link>
