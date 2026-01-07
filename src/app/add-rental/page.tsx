@@ -11,6 +11,12 @@ import Link from "next/link";
 
 type Mode = "paste" | "preview";
 
+interface ExistingRentalInfo {
+  id: string;
+  title: string;
+  address: string | null;
+}
+
 export default function AddRentalPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("paste");
@@ -18,6 +24,8 @@ export default function AddRentalPage() {
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<ExistingRentalInfo | null>(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
 
   const handleParsed = (rental: FacebookRental) => {
     setParsedRental(rental);
@@ -30,7 +38,7 @@ export default function AddRentalPage() {
     setWarnings([]);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (forceUpdate = false) => {
     if (!parsedRental) return;
 
     setIsSaving(true);
@@ -41,12 +49,19 @@ export default function AddRentalPage() {
       const response = await fetch("/api/rentals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsedRental),
+        body: JSON.stringify({ ...parsedRental, forceUpdate }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
+        // Check if it's a duplicate
+        if (response.status === 409 && result.error === "duplicate") {
+          setDuplicateInfo(result.existingRental);
+          setShowDuplicateDialog(true);
+          return;
+        }
+
         setError(result.error || "Failed to save rental");
         return;
       }
@@ -62,6 +77,16 @@ export default function AddRentalPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleConfirmUpdate = async () => {
+    setShowDuplicateDialog(false);
+    await handleSave(true); // Force update
+  };
+
+  const handleCancelUpdate = () => {
+    setShowDuplicateDialog(false);
+    setDuplicateInfo(null);
   };
 
   const handleBackToEdit = () => {
@@ -228,7 +253,7 @@ export default function AddRentalPage() {
               Edit JSON
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => handleSave()}
               className="flex-1"
               disabled={isSaving}
             >
@@ -243,6 +268,52 @@ export default function AddRentalPage() {
               </AlertDescription>
             </Alert>
           )}
+        </div>
+      )}
+
+      {/* Duplicate Confirmation Dialog */}
+      {showDuplicateDialog && duplicateInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Rental Already Exists</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>This rental has already been imported:</p>
+              <div className="bg-secondary p-3 rounded">
+                <p className="font-semibold">{duplicateInfo.title}</p>
+                {duplicateInfo.address && (
+                  <p className="text-sm text-muted-foreground">{duplicateInfo.address}</p>
+                )}
+              </div>
+              <p className="text-sm">
+                Do you want to update the existing rental with the new data?
+                The location coordinates will be preserved.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCancelUpdate}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Link href={`/rentals/${duplicateInfo.id}`} className="flex-1">
+                  <Button variant="outline" className="w-full" disabled={isSaving}>
+                    View Existing
+                  </Button>
+                </Link>
+                <Button
+                  onClick={handleConfirmUpdate}
+                  className="flex-1"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Updating..." : "Update"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

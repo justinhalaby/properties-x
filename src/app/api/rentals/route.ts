@@ -65,11 +65,14 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const body = await request.json();
+    const forceUpdate = body.forceUpdate === true; // Check if user confirmed update
 
     let rentalInput: CreateRentalInput;
     let warnings: string[] = [];
     let fbImages: string[] = [];
     let fbVideos: string[] = [];
+    let existingRentalId: string | null = null;
+    let shouldGeocode = true;
 
     // Check if it's Facebook JSON format
     if (validateFacebookRentalJson(body)) {
@@ -89,8 +92,45 @@ export async function POST(request: Request) {
       fbImages = (body as FacebookRental).media?.images || [];
       fbVideos = (body as FacebookRental).media?.videos || [];
 
-      // Auto-geocode if address exists
-      if (rentalInput.address && !rentalInput.latitude) {
+      // Check if rental with this facebook_id already exists
+      if (rentalInput.facebook_id) {
+        const { data: existingRental } = await supabase
+          .from("rentals")
+          .select("id, title, address, latitude, longitude")
+          .eq("facebook_id", rentalInput.facebook_id)
+          .single();
+
+        if (existingRental) {
+          if (!forceUpdate) {
+            // Return conflict with existing rental info
+            return NextResponse.json(
+              {
+                error: "duplicate",
+                message: "This rental has already been imported",
+                existingRental: {
+                  id: existingRental.id,
+                  title: existingRental.title,
+                  address: existingRental.address,
+                },
+              },
+              { status: 409 }
+            );
+          }
+
+          // User confirmed update - use existing ID and preserve geocoding
+          existingRentalId = existingRental.id;
+          shouldGeocode = false; // Don't re-geocode on update
+
+          // Preserve existing coordinates
+          if (existingRental.latitude && existingRental.longitude) {
+            rentalInput.latitude = existingRental.latitude;
+            rentalInput.longitude = existingRental.longitude;
+          }
+        }
+      }
+
+      // Auto-geocode if address exists and no existing coordinates
+      if (shouldGeocode && rentalInput.address && !rentalInput.latitude) {
         try {
           const geoResult = await geocodeAddress(
             rentalInput.address,
@@ -121,52 +161,67 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create rental first to get ID (without media)
-    const { data: rental, error: insertError } = await supabase
-      .from("rentals")
-      .insert({
-        source_url: rentalInput.source_url ?? null,
-        source_name: rentalInput.source_name ?? 'manual',
-        facebook_id: rentalInput.facebook_id ?? null,
-        extracted_date: rentalInput.extracted_date ?? null,
-        title: rentalInput.title,
-        address: rentalInput.address ?? null,
-        city: rentalInput.city ?? null,
-        postal_code: rentalInput.postal_code ?? null,
-        rental_location: rentalInput.rental_location ?? null,
-        monthly_rent: rentalInput.monthly_rent ?? null,
-        bedrooms: rentalInput.bedrooms ?? null,
-        bathrooms: rentalInput.bathrooms ?? null,
-        unit_type: rentalInput.unit_type ?? null,
-        pet_policy: rentalInput.pet_policy ?? [],
-        amenities: rentalInput.amenities ?? [],
-        unit_details_raw: rentalInput.unit_details_raw ?? [],
-        building_details: rentalInput.building_details ?? [],
-        description: rentalInput.description ?? null,
-        seller_name: rentalInput.seller_name ?? null,
-        seller_profile_url: rentalInput.seller_profile_url ?? null,
-        images: [], // Will be updated after media processing
-        videos: [], // Will be updated after media processing
-        latitude: rentalInput.latitude ?? null,
-        longitude: rentalInput.longitude ?? null,
-        geocoded_at: rentalInput.latitude ? new Date().toISOString() : null,
-        notes: rentalInput.notes ?? null,
-      })
-      .select()
-      .single();
+    // Prepare rental data
+    const rentalData = {
+      source_url: rentalInput.source_url ?? null,
+      source_name: rentalInput.source_name ?? 'manual',
+      facebook_id: rentalInput.facebook_id ?? null,
+      extracted_date: rentalInput.extracted_date ?? null,
+      title: rentalInput.title,
+      address: rentalInput.address ?? null,
+      city: rentalInput.city ?? null,
+      postal_code: rentalInput.postal_code ?? null,
+      rental_location: rentalInput.rental_location ?? null,
+      monthly_rent: rentalInput.monthly_rent ?? null,
+      bedrooms: rentalInput.bedrooms ?? null,
+      bathrooms: rentalInput.bathrooms ?? null,
+      unit_type: rentalInput.unit_type ?? null,
+      pet_policy: rentalInput.pet_policy ?? [],
+      amenities: rentalInput.amenities ?? [],
+      unit_details_raw: rentalInput.unit_details_raw ?? [],
+      building_details: rentalInput.building_details ?? [],
+      description: rentalInput.description ?? null,
+      seller_name: rentalInput.seller_name ?? null,
+      seller_profile_url: rentalInput.seller_profile_url ?? null,
+      images: [], // Will be updated after media processing
+      videos: [], // Will be updated after media processing
+      latitude: rentalInput.latitude ?? null,
+      longitude: rentalInput.longitude ?? null,
+      geocoded_at: rentalInput.latitude ? new Date().toISOString() : null,
+      notes: rentalInput.notes ?? null,
+    };
 
-    // Handle duplicate facebook_id (error code 23505)
-    if (insertError?.code === '23505' && insertError.message.includes('facebook_id')) {
-      return NextResponse.json(
-        { error: "This rental has already been imported" },
-        { status: 409 }
-      );
+    let rental;
+    let rentalError;
+
+    if (existingRentalId) {
+      // Update existing rental
+      const { data, error } = await supabase
+        .from("rentals")
+        .update(rentalData)
+        .eq("id", existingRentalId)
+        .select()
+        .single();
+
+      rental = data;
+      rentalError = error;
+      warnings.push("Updated existing rental");
+    } else {
+      // Create new rental
+      const { data, error } = await supabase
+        .from("rentals")
+        .insert(rentalData)
+        .select()
+        .single();
+
+      rental = data;
+      rentalError = error;
     }
 
-    if (insertError || !rental) {
-      console.error("Error creating rental:", insertError);
+    if (rentalError || !rental) {
+      console.error("Error saving rental:", rentalError);
       return NextResponse.json(
-        { error: insertError?.message || "Failed to create rental" },
+        { error: rentalError?.message || "Failed to save rental" },
         { status: 500 }
       );
     }

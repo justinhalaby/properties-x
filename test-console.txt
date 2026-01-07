@@ -1,6 +1,3 @@
-Copy and paste this entire code into the Chrome Console while on the Quebec company page:
-
----CODE START---
 (async function() {
   console.log('🚀 Starting Quebec company extraction test...');
 
@@ -340,4 +337,3 @@ Copy and paste this entire code into the Chrome Console while on the Quebec comp
     console.error('❌ Fetch Error:', error);
   }
 })();
----CODE END---
