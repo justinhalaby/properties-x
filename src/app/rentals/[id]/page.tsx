@@ -128,60 +128,62 @@ export default function RentalDetailPage() {
     );
   }
 
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(date);
+    } catch {
+      return null;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Link href="/rentals">
           <Button variant="outline">← Back to Rentals</Button>
         </Link>
+        {rental.extracted_date && (
+          <div className="text-sm text-muted-foreground">
+            Extracted: {formatDate(rental.extracted_date)}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Main Image */}
-          {imageUrls.length > 0 && (
-            <div className="relative aspect-[16/10] bg-secondary overflow-hidden rounded-xl">
-              <img
-                src={imageUrls[0]}
-                alt={rental.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          {/* Additional Images */}
-          {imageUrls.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {imageUrls.slice(1).map((url, i) => (
-                <div key={i} className="relative aspect-square bg-secondary overflow-hidden rounded">
+          {/* Media Gallery - Videos first, then images, all same size, 4 per row */}
+          {(videoUrls.length > 0 || imageUrls.length > 0) && (
+            <div className="grid grid-cols-4 gap-3">
+              {/* Videos first */}
+              {videoUrls.map((url, i) => (
+                <div key={`video-${i}`} className="relative aspect-square bg-secondary overflow-hidden rounded-lg">
+                  <video
+                    src={url}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+              {/* Then images */}
+              {imageUrls.map((url, i) => (
+                <div key={`image-${i}`} className="relative aspect-square bg-secondary overflow-hidden rounded-lg">
                   <img
                     src={url}
-                    alt={`${rental.title} ${i + 2}`}
+                    alt={`${rental.title} ${i + 1}`}
                     className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
                   />
                 </div>
               ))}
             </div>
-          )}
-
-          {/* Videos */}
-          {videoUrls.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Videos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {videoUrls.map((url, i) => (
-                  <video
-                    key={i}
-                    src={url}
-                    controls
-                    className="w-full rounded-lg"
-                  />
-                ))}
-              </CardContent>
-            </Card>
           )}
 
           {/* Description */}
@@ -192,44 +194,6 @@ export default function RentalDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap">{rental.description}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Amenities */}
-          {rental.amenities.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Amenities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid grid-cols-2 gap-2">
-                  {rental.amenities.map((amenity, i) => (
-                    <li key={i} className="flex items-center text-sm">
-                      <span className="mr-2">•</span>
-                      {amenity}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Building Details */}
-          {rental.building_details.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Building Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid grid-cols-2 gap-2">
-                  {rental.building_details.map((detail, i) => (
-                    <li key={i} className="flex items-center text-sm">
-                      <span className="mr-2">•</span>
-                      {detail}
-                    </li>
-                  ))}
-                </ul>
               </CardContent>
             </Card>
           )}
@@ -271,10 +235,10 @@ export default function RentalDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Details Card */}
+          {/* Combined Unit & Building Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Details</CardTitle>
+              <CardTitle>Property Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {rental.bedrooms !== null && (
@@ -303,49 +267,85 @@ export default function RentalDetailPage() {
                   </span>
                 </div>
               )}
+
+              {/* Building Details */}
+              {rental.building_details.length > 0 && (
+                <>
+                  <div className="border-t pt-3 mt-3">
+                    <p className="text-sm font-semibold text-muted-foreground mb-2">Building Features</p>
+                  </div>
+                  <ul className="space-y-2">
+                    {rental.building_details.map((detail, i) => (
+                      <li key={i} className="flex items-start text-sm">
+                        <span className="mr-2 text-muted-foreground">•</span>
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {/* Amenities */}
+              {rental.amenities.length > 0 && (
+                <>
+                  <div className="border-t pt-3 mt-3">
+                    <p className="text-sm font-semibold text-muted-foreground mb-2">Amenities</p>
+                  </div>
+                  <ul className="grid grid-cols-2 gap-2">
+                    {rental.amenities.map((amenity, i) => (
+                      <li key={i} className="flex items-start text-sm">
+                        <span className="mr-2 text-muted-foreground">•</span>
+                        <span>{amenity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </CardContent>
           </Card>
 
-          {/* Seller Info */}
-          {rental.seller_name && (
+          {/* Combined Seller & Source Info */}
+          {(rental.seller_name || rental.source_url) && (
             <Card>
               <CardHeader>
-                <CardTitle>Seller</CardTitle>
+                <CardTitle>Listing Information</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="font-semibold">{rental.seller_name}</p>
-                {rental.seller_profile_url && (
-                  <a
-                    href={rental.seller_profile_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    View Profile
-                  </a>
+              <CardContent className="space-y-4">
+                {/* Seller */}
+                {rental.seller_name && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Seller</p>
+                    <p className="font-semibold">{rental.seller_name}</p>
+                    {rental.seller_profile_url && (
+                      <a
+                        href={rental.seller_profile_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View Profile
+                      </a>
+                    )}
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Source Info */}
-          {rental.source_url && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Source</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {rental.source_name || "Unknown"}
-                </p>
-                <a
-                  href={rental.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline break-all"
-                >
-                  View Original Listing
-                </a>
+                {/* Source */}
+                {rental.source_url && (
+                  <div className={rental.seller_name ? "border-t pt-4" : ""}>
+                    <p className="text-sm text-muted-foreground mb-1">Source</p>
+                    <p className="text-sm font-semibold mb-2">
+                      {rental.source_name || "Unknown"}
+                    </p>
+                    <a
+                      href={rental.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline break-all"
+                    >
+                      View Original Listing
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
