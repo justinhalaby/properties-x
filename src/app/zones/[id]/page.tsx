@@ -2,11 +2,9 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import type { ScrapingZone } from "@/types/scraping-zone";
 
 const ZoneBuildingsMap = dynamic(
@@ -23,8 +21,6 @@ export default function ZoneDetailPage({
   const resolvedParams = use(params);
   const [zone, setZone] = useState<ScrapingZone | null>(null);
   const [loading, setLoading] = useState(true);
-  const [scrapingLimit, setScrapingLimit] = useState(50);
-  const [triggeringJob, setTriggeringJob] = useState(false);
   const [properties, setProperties] = useState<any[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [showOnlyUnscraped, setShowOnlyUnscraped] = useState(false);
@@ -51,7 +47,6 @@ export default function ZoneDetailPage({
       const statsData = await statsRes.json();
 
       setZone(statsData.zone || zoneData.data);
-      setScrapingLimit(zoneData.data?.target_limit || 50);
     } catch (error) {
       console.error("Failed to fetch zone:", error);
     } finally {
@@ -77,37 +72,6 @@ export default function ZoneDetailPage({
       console.error("Failed to fetch properties:", error);
     } finally {
       setPropertiesLoading(false);
-    }
-  };
-
-  const handleTriggerScraping = async () => {
-    setTriggeringJob(true);
-    try {
-      const res = await fetch(`/api/zones/${resolvedParams.id}/scrape`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: scrapingLimit }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (data.already_complete) {
-          alert("All properties in this zone have already been scraped!");
-        } else {
-          alert(
-            `Scraping job created!\n\nTo start scraping, run this command in your terminal:\n\n${data.command}\n\nThis will scrape ${data.to_scrape} properties.`
-          );
-        }
-        await fetchZoneDetails();
-      } else {
-        alert(`Error: ${data.error}`);
-      }
-    } catch (error) {
-      console.error("Failed to trigger scraping:", error);
-      alert("Failed to create scraping job. Please try again.");
-    } finally {
-      setTriggeringJob(false);
     }
   };
 
@@ -242,45 +206,6 @@ export default function ZoneDetailPage({
             </div>
           </Card>
         </div>
-
-        <Card className="p-6 mb-8">
-          <h3 className="font-bold mb-4">Start Scraping</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Number of properties to scrape:
-              </label>
-              <Input
-                type="number"
-                value={scrapingLimit}
-                onChange={(e) => setScrapingLimit(parseInt(e.target.value) || 1)}
-                min={1}
-                max={remaining}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {remaining} properties remaining to scrape
-              </p>
-            </div>
-
-            <Button
-              onClick={handleTriggerScraping}
-              disabled={triggeringJob || remaining === 0}
-              className="w-full"
-            >
-              {triggeringJob ? "Creating Job..." : "Create Scraping Job"}
-            </Button>
-
-            <div className="bg-secondary p-4 rounded text-sm">
-              <p className="font-medium mb-2">Note:</p>
-              <p className="text-muted-foreground">
-                Clicking "Create Scraping Job" will create a job record. To actually
-                run the scraper, you'll need to execute the provided command in your
-                terminal. This ensures scraping runs in a controlled environment with
-                proper rate limiting (90-180 second delays between requests).
-              </p>
-            </div>
-          </div>
-        </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
