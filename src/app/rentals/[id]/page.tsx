@@ -420,9 +420,16 @@ export default function RentalDetailPage() {
           {/* Price Card */}
           <Card>
             <CardContent className="pt-6">
-              <p className="text-3xl font-bold text-primary mb-2">
-                {formatRent(rental.monthly_rent)}
-              </p>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-3xl font-bold text-primary">
+                  {formatRent(rental.monthly_rent)}
+                </p>
+                {rental.square_footage && (
+                  <p className="text-xl font-semibold text-muted-foreground">
+                    {rental.square_footage.toLocaleString()} sq ft
+                  </p>
+                )}
+              </div>
               <h1 className="text-2xl font-bold mb-2">{rental.title}</h1>
               {rental.address && (
                 <p className="text-muted-foreground mb-2">{rental.address}</p>

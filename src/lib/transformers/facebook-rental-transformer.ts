@@ -28,6 +28,7 @@ export function transformCuratedToRental(
     price_display: curated.price_display || null,
     bedrooms: curated.bedrooms || null,
     bathrooms: curated.bathrooms || null,
+    square_footage: curated.square_footage || null,
     unit_type: curated.unit_type || null,
     pet_policy: curated.pet_policy,
     amenities: curated.amenities,

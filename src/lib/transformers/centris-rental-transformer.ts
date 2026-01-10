@@ -47,6 +47,7 @@ export function transformCuratedToRental(
       monthly_rent: curated.price,
       bedrooms: curated.bedrooms,
       bathrooms: curated.bathrooms,
+      square_footage: curated.square_footage,
 
       // Property type
       unit_type: inferUnitType(curated.property_type),

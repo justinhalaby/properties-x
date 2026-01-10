@@ -17,6 +17,7 @@ export interface Rental {
   monthly_rent: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  square_footage: number | null;
   unit_type: string | null;
   pet_policy: string[];
   amenities: string[];
@@ -71,6 +72,7 @@ export interface CreateRentalInput {
   monthly_rent?: number;
   bedrooms?: number;
   bathrooms?: number;
+  square_footage?: number;
   unit_type?: string;
   pet_policy?: string[];
   amenities?: string[];
