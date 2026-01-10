@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { JsonPasteInput } from "@/components/rental/json-paste-input";
+import { CentrisRentalImport } from "@/components/rental/centris-rental-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { FacebookRental } from "@/types/rental";
 import Link from "next/link";
 
+type ImportSource = "facebook" | "centris";
 type Mode = "paste" | "preview";
 
 interface ExistingRentalInfo {
@@ -19,6 +21,7 @@ interface ExistingRentalInfo {
 
 export default function AddRentalPage() {
   const router = useRouter();
+  const [importSource, setImportSource] = useState<ImportSource>("facebook");
   const [mode, setMode] = useState<Mode>("paste");
   const [parsedRental, setParsedRental] = useState<FacebookRental | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,42 +108,76 @@ export default function AddRentalPage() {
         </Link>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {/* Import Source Selector */}
+      <div className="flex gap-2 mb-6">
+        <Button
+          onClick={() => {
+            setImportSource("facebook");
+            setMode("paste");
+            setError(null);
+            setWarnings([]);
+          }}
+          variant={importSource === "facebook" ? "default" : "outline"}
+          className="flex-1"
+        >
+          Facebook JSON
+        </Button>
+        <Button
+          onClick={() => {
+            setImportSource("centris");
+            setMode("paste");
+            setError(null);
+            setWarnings([]);
+          }}
+          variant={importSource === "centris" ? "default" : "outline"}
+          className="flex-1"
+        >
+          Centris URL
+        </Button>
+      </div>
 
-      {/* Warnings Alert */}
-      {warnings.length > 0 && (
-        <Alert className="mb-6 border-yellow-500">
-          <AlertDescription>
-            <p className="font-semibold mb-2">Warnings:</p>
-            <ul className="list-disc pl-4 space-y-1">
-              {warnings.map((warning, i) => (
-                <li key={i} className="text-sm">{warning}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Centris Import Mode */}
+      {importSource === "centris" && <CentrisRentalImport />}
 
-      {/* Paste Mode */}
-      {mode === "paste" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Import from Facebook Marketplace</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <JsonPasteInput onParsed={handleParsed} onError={handleError} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Facebook Import Mode */}
+      {importSource === "facebook" && (
+        <>
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {/* Preview Mode */}
-      {mode === "preview" && parsedRental && (
-        <div className="space-y-6">
+          {/* Warnings Alert */}
+          {warnings.length > 0 && (
+            <Alert className="mb-6 border-yellow-500">
+              <AlertDescription>
+                <p className="font-semibold mb-2">Warnings:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  {warnings.map((warning, i) => (
+                    <li key={i} className="text-sm">{warning}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Paste Mode */}
+          {mode === "paste" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Import from Facebook Marketplace</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <JsonPasteInput onParsed={handleParsed} onError={handleError} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Preview Mode */}
+          {mode === "preview" && parsedRental && (
+            <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Review Rental Details</CardTitle>
@@ -268,11 +305,11 @@ export default function AddRentalPage() {
               </AlertDescription>
             </Alert>
           )}
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* Duplicate Confirmation Dialog */}
-      {showDuplicateDialog && duplicateInfo && (
+          {/* Duplicate Confirmation Dialog */}
+          {showDuplicateDialog && duplicateInfo && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="max-w-md mx-4">
             <CardHeader>
@@ -315,6 +352,8 @@ export default function AddRentalPage() {
             </CardContent>
           </Card>
         </div>
+          )}
+        </>
       )}
     </div>
   );

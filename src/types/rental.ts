@@ -6,6 +6,7 @@ export interface Rental {
   source_url: string | null;
   source_name: string | null;
   facebook_id: string | null;
+  centris_id: string | null; // Centris listing ID for linking to raw data
   extracted_date: string | null;
   title: string;
   address: string | null;
@@ -59,6 +60,7 @@ export interface CreateRentalInput {
   source_url?: string;
   source_name?: string;
   facebook_id?: string;
+  centris_id?: string;
   extracted_date?: string;
   title: string;
   address?: string;

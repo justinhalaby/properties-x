@@ -27,4 +27,5 @@ export function detectSource(url: string): SourceName {
 
 export { BaseScraper } from "./base-scraper";
 export { CentrisScraper } from "./centris-scraper";
+export { CentrisRentalScraper } from "./centris-rental-scraper";
 export { GenericScraper } from "./generic-scraper";
