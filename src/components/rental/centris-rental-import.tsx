@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type ImportMode = "url" | "json";
 type Step = "scrape" | "transform";
@@ -42,6 +51,14 @@ interface TransformResult {
   message: string;
 }
 
+interface BatchResult {
+  url: string;
+  status: 'success' | 'failed';
+  rentalId?: string;
+  error?: string;
+  warnings?: string[];
+}
+
 export function CentrisRentalImport() {
   const router = useRouter();
   const [importMode, setImportMode] = useState<ImportMode>("url");
@@ -52,6 +69,17 @@ export function CentrisRentalImport() {
   const [error, setError] = useState<string | null>(null);
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+
+  // Batch processing state
+  const [batchMode, setBatchMode] = useState(false);
+  const [urlsText, setUrlsText] = useState('');
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [batchResults, setBatchResults] = useState<BatchResult[]>([]);
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const [isDelaying, setIsDelaying] = useState(false);
 
   const handleScrapeUrl = async () => {
     if (!url.trim()) {
@@ -228,6 +256,139 @@ export function CentrisRentalImport() {
     setStep("scrape");
   };
 
+  const handleBatchProcess = async () => {
+    // 1. Parse URLs from textarea (split by newline, trim, filter empty)
+    const urls = urlsText
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url.length > 0);
+
+    if (urls.length === 0) {
+      setError('No valid URLs found');
+      return;
+    }
+
+    // 2. Validate all URLs
+    const invalidUrls = urls.filter(url => !url.match(/centris\.ca.*~a-louer~/i));
+    if (invalidUrls.length > 0) {
+      setError(`Invalid Centris rental URLs found:\n${invalidUrls.join('\n')}`);
+      return;
+    }
+
+    // 3. Initialize state
+    setIsBatchProcessing(true);
+    setCancelRequested(false);
+    setBatchProgress({ current: 0, total: urls.length });
+    setBatchResults([]);
+    setError(null);
+
+    // 4. Process each URL sequentially
+    for (let i = 0; i < urls.length; i++) {
+      // Check for cancellation
+      if (cancelRequested) {
+        setError('Batch processing cancelled by user');
+        break;
+      }
+
+      const url = urls[i];
+      setCurrentUrl(url);
+      setBatchProgress({ current: i + 1, total: urls.length });
+
+      try {
+        // Step 1: Scrape
+        const scrapeResponse = await fetch('/api/centris-rentals/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const scrapeResult = await scrapeResponse.json();
+
+        if (!scrapeResponse.ok) {
+          throw new Error(scrapeResult.error || 'Scraping failed');
+        }
+
+        // Handle duplicate case
+        if (scrapeResult.alreadyExists && scrapeResult.status === 'success') {
+          setBatchResults(prev => [...prev, {
+            url,
+            status: 'success',
+            rentalId: scrapeResult.rentalId,
+            warnings: ['Listing already exists'],
+          }]);
+          // Delay before next URL (except after last URL)
+          if (i < urls.length - 1) {
+            const randomDelay = Math.floor(Math.random() * 41) + 20; // Random 20-60 seconds
+            setIsDelaying(true);
+            setCountdown(randomDelay);
+
+            for (let remaining = randomDelay; remaining > 0; remaining--) {
+              if (cancelRequested) break;
+              setCountdown(remaining);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            setIsDelaying(false);
+            setCountdown(0);
+          }
+          continue;
+        }
+
+        // Step 2: Transform
+        const transformResponse = await fetch('/api/centris-rentals/transform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ centrisId: scrapeResult.centrisId }),
+        });
+
+        const transformResult = await transformResponse.json();
+
+        if (!transformResponse.ok) {
+          throw new Error(transformResult.message || 'Transformation failed');
+        }
+
+        // Success!
+        setBatchResults(prev => [...prev, {
+          url,
+          status: 'success',
+          rentalId: transformResult.rental.id,
+          warnings: transformResult.warnings,
+        }]);
+
+      } catch (error) {
+        // Error handling - continue with next URL
+        console.error(`Error processing ${url}:`, error);
+        setBatchResults(prev => [...prev, {
+          url,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }]);
+      }
+
+      // Delay before next URL (except after last URL)
+      if (i < urls.length - 1) {
+        const randomDelay = Math.floor(Math.random() * 41) + 20; // Random 20-60 seconds
+        setIsDelaying(true);
+        setCountdown(randomDelay);
+
+        for (let remaining = randomDelay; remaining > 0; remaining--) {
+          if (cancelRequested) break;
+          setCountdown(remaining);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        setIsDelaying(false);
+        setCountdown(0);
+      }
+    }
+
+    // 5. Cleanup
+    setIsBatchProcessing(false);
+    setCurrentUrl('');
+    setIsDelaying(false);
+    setCountdown(0);
+  };
+
   return (
     <div className="space-y-6">
       {/* Error Alert */}
@@ -251,8 +412,37 @@ export function CentrisRentalImport() {
         </Alert>
       )}
 
-      {/* Step 1: Import (URL or JSON) */}
+      {/* Batch Mode Toggle */}
       {step === "scrape" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Import Mode</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setBatchMode(false)}
+                variant={!batchMode ? "default" : "outline"}
+                className="flex-1"
+                disabled={isProcessing || isBatchProcessing}
+              >
+                Single URL
+              </Button>
+              <Button
+                onClick={() => setBatchMode(true)}
+                variant={batchMode ? "default" : "outline"}
+                className="flex-1"
+                disabled={isProcessing || isBatchProcessing}
+              >
+                Batch URLs
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 1: Import (URL or JSON) - Single Mode */}
+      {step === "scrape" && !batchMode && (
         <Card>
           <CardHeader>
             <CardTitle>Import from Centris.ca</CardTitle>
@@ -365,6 +555,158 @@ export function CentrisRentalImport() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Batch Mode UI */}
+      {step === "scrape" && batchMode && (
+        <div className="space-y-6">
+          {/* Batch Input Section */}
+          {!isBatchProcessing && batchResults.length === 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Batch Process Multiple URLs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* URL Input */}
+                <div>
+                  <Label>Centris Rental URLs (one per line)</Label>
+                  <Textarea
+                    placeholder="https://www.centris.ca/.../19013486&#10;https://www.centris.ca/.../19013487&#10;https://www.centris.ca/.../19013488"
+                    rows={10}
+                    value={urlsText}
+                    onChange={(e) => setUrlsText(e.target.value)}
+                    className="font-mono text-xs mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Paste Centris rental URLs (must contain ~a-louer~), one per line. A random delay between 20-60 seconds will be applied between each URL.
+                  </p>
+                </div>
+
+                {/* Start Button */}
+                <Button
+                  onClick={handleBatchProcess}
+                  disabled={!urlsText.trim()}
+                  className="w-full"
+                >
+                  Start Batch Processing
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Progress Tracker */}
+          {isBatchProcessing && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Processing...</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Progress:</span>
+                    <span className="font-semibold">
+                      {batchProgress.current} of {batchProgress.total}
+                    </span>
+                  </div>
+                  <Progress
+                    value={(batchProgress.current / batchProgress.total) * 100}
+                  />
+                  {currentUrl && !isDelaying && (
+                    <p className="text-sm text-muted-foreground">
+                      Currently processing: {currentUrl}
+                    </p>
+                  )}
+                  {isDelaying && countdown > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      <p>Waiting before next URL...</p>
+                      <p className="text-lg font-semibold text-primary mt-1">
+                        {countdown} second{countdown !== 1 ? 's' : ''} remaining
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="destructive"
+                  onClick={() => setCancelRequested(true)}
+                  className="w-full"
+                >
+                  Cancel Batch
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results Summary */}
+          {batchResults.length > 0 && !isBatchProcessing && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Batch Results</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 rounded">
+                    <p className="text-2xl font-bold text-green-600">
+                      {batchResults.filter(r => r.status === 'success').length}
+                    </p>
+                    <p className="text-sm text-green-700">Successful</p>
+                  </div>
+                  <div className="p-4 bg-red-50 rounded">
+                    <p className="text-2xl font-bold text-red-600">
+                      {batchResults.filter(r => r.status === 'failed').length}
+                    </p>
+                    <p className="text-sm text-red-700">Failed</p>
+                  </div>
+                </div>
+
+                <Accordion type="single" collapsible>
+                  {batchResults.map((result, index) => (
+                    <AccordionItem key={index} value={`item-${index}`}>
+                      <AccordionTrigger>
+                        {result.status === 'success' ? '✅' : '❌'} {result.url}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {result.status === 'success' ? (
+                          <div className="space-y-2">
+                            <Link
+                              href={`/rentals/${result.rentalId}`}
+                              className="text-primary underline hover:text-primary/80"
+                            >
+                              View Rental →
+                            </Link>
+                            {result.warnings && result.warnings.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-sm font-semibold">Warnings:</p>
+                                <ul className="list-disc pl-4 text-sm">
+                                  {result.warnings.map((w, i) => (
+                                    <li key={i}>{w}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-destructive">{result.error}</p>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+
+                <Button
+                  onClick={() => {
+                    setBatchResults([]);
+                    setUrlsText('');
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Process Another Batch
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Step 2: Transform */}
