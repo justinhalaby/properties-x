@@ -12,7 +12,9 @@
     "import:evaluations:v2": "dotenv -e .env.local -- tsx scripts/import-evaluations-v2.ts",
     "find:missing": "dotenv -e .env.local -- tsx scripts/find-missing.ts",
     "scrape:large": "dotenv -e .env.local -- tsx scripts/scrape-large-properties.ts",
-    "backfill:curated": "dotenv -e .env.local -- tsx scripts/backfill-centris-curated.ts"
+    "backfill:curated": "dotenv -e .env.local -- tsx scripts/backfill-centris-curated.ts",
+    "backfill:facebook:metadata": "dotenv -e .env.local -- tsx scripts/populate-facebook-metadata.ts",
+    "backfill:facebook": "dotenv -e .env.local -- tsx scripts/backfill-facebook-curated.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

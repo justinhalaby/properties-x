@@ -1,102 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { JsonPasteInput } from "@/components/rental/json-paste-input";
+import { FacebookRentalImport } from "@/components/rental/facebook-rental-import";
 import { CentrisRentalImport } from "@/components/rental/centris-rental-import";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { FacebookRental } from "@/types/rental";
 import Link from "next/link";
 
 type ImportSource = "facebook" | "centris";
-type Mode = "paste" | "preview";
-
-interface ExistingRentalInfo {
-  id: string;
-  title: string;
-  address: string | null;
-}
 
 export default function AddRentalPage() {
-  const router = useRouter();
   const [importSource, setImportSource] = useState<ImportSource>("facebook");
-  const [mode, setMode] = useState<Mode>("paste");
-  const [parsedRental, setParsedRental] = useState<FacebookRental | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [duplicateInfo, setDuplicateInfo] = useState<ExistingRentalInfo | null>(null);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-
-  const handleParsed = (rental: FacebookRental) => {
-    setParsedRental(rental);
-    setError(null);
-    setMode("preview");
-  };
-
-  const handleError = (errorMsg: string) => {
-    setError(errorMsg);
-    setWarnings([]);
-  };
-
-  const handleSave = async (forceUpdate = false) => {
-    if (!parsedRental) return;
-
-    setIsSaving(true);
-    setError(null);
-    setWarnings([]);
-
-    try {
-      const response = await fetch("/api/rentals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsedRental, forceUpdate }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Check if it's a duplicate
-        if (response.status === 409 && result.error === "duplicate") {
-          setDuplicateInfo(result.existingRental);
-          setShowDuplicateDialog(true);
-          return;
-        }
-
-        setError(result.error || "Failed to save rental");
-        return;
-      }
-
-      if (result.warnings && result.warnings.length > 0) {
-        setWarnings(result.warnings);
-      }
-
-      // Redirect to detail page
-      router.push(`/rentals/${result.data.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save rental");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleConfirmUpdate = async () => {
-    setShowDuplicateDialog(false);
-    await handleSave(true); // Force update
-  };
-
-  const handleCancelUpdate = () => {
-    setShowDuplicateDialog(false);
-    setDuplicateInfo(null);
-  };
-
-  const handleBackToEdit = () => {
-    setMode("paste");
-    setError(null);
-    setWarnings([]);
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -111,24 +24,14 @@ export default function AddRentalPage() {
       {/* Import Source Selector */}
       <div className="flex gap-2 mb-6">
         <Button
-          onClick={() => {
-            setImportSource("facebook");
-            setMode("paste");
-            setError(null);
-            setWarnings([]);
-          }}
+          onClick={() => setImportSource("facebook")}
           variant={importSource === "facebook" ? "default" : "outline"}
           className="flex-1"
         >
           Facebook JSON
         </Button>
         <Button
-          onClick={() => {
-            setImportSource("centris");
-            setMode("paste");
-            setError(null);
-            setWarnings([]);
-          }}
+          onClick={() => setImportSource("centris")}
           variant={importSource === "centris" ? "default" : "outline"}
           className="flex-1"
         >
@@ -136,225 +39,11 @@ export default function AddRentalPage() {
         </Button>
       </div>
 
+      {/* Facebook Import Mode */}
+      {importSource === "facebook" && <FacebookRentalImport />}
+
       {/* Centris Import Mode */}
       {importSource === "centris" && <CentrisRentalImport />}
-
-      {/* Facebook Import Mode */}
-      {importSource === "facebook" && (
-        <>
-          {/* Error Alert */}
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Warnings Alert */}
-          {warnings.length > 0 && (
-            <Alert className="mb-6 border-yellow-500">
-              <AlertDescription>
-                <p className="font-semibold mb-2">Warnings:</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  {warnings.map((warning, i) => (
-                    <li key={i} className="text-sm">{warning}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Paste Mode */}
-          {mode === "paste" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Import from Facebook Marketplace</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <JsonPasteInput onParsed={handleParsed} onError={handleError} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Preview Mode */}
-          {mode === "preview" && parsedRental && (
-            <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Review Rental Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Title */}
-              <div>
-                <p className="text-sm text-muted-foreground">Title</p>
-                <p className="font-semibold">{parsedRental.title}</p>
-              </div>
-
-              {/* Price */}
-              <div>
-                <p className="text-sm text-muted-foreground">Price</p>
-                <p className="text-lg font-bold text-primary">{parsedRental.price}</p>
-              </div>
-
-              {/* Address */}
-              {parsedRental.address && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Address</p>
-                  <p>{parsedRental.address}</p>
-                </div>
-              )}
-
-              {/* Location */}
-              {parsedRental.rentalLocation && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p>{parsedRental.rentalLocation}</p>
-                </div>
-              )}
-
-              {/* Unit Details */}
-              {parsedRental.unitDetails && parsedRental.unitDetails.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Unit Details</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {parsedRental.unitDetails.map((detail, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-secondary rounded text-xs"
-                      >
-                        {detail}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Building Details */}
-              {parsedRental.buildingDetails && parsedRental.buildingDetails.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Building Details</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {parsedRental.buildingDetails.map((detail, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-secondary rounded text-xs"
-                      >
-                        {detail}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {parsedRental.description && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Description</p>
-                  <p className="text-sm whitespace-pre-wrap">{parsedRental.description}</p>
-                </div>
-              )}
-
-              {/* Media Count */}
-              <div className="grid grid-cols-2 gap-4">
-                {parsedRental.media?.images && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Images</p>
-                    <p className="font-semibold">{parsedRental.media.images.length}</p>
-                  </div>
-                )}
-                {parsedRental.media?.videos && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Videos</p>
-                    <p className="font-semibold">{parsedRental.media.videos.length}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Seller Info */}
-              {parsedRental.sellerInfo && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Seller</p>
-                  <p>{parsedRental.sellerInfo.name}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <Button
-              onClick={handleBackToEdit}
-              variant="outline"
-              className="flex-1"
-              disabled={isSaving}
-            >
-              Edit JSON
-            </Button>
-            <Button
-              onClick={() => handleSave()}
-              className="flex-1"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save Rental"}
-            </Button>
-          </div>
-
-          {isSaving && (
-            <Alert>
-              <AlertDescription>
-                Processing rental data, downloading media, and geocoding address. This may take a moment...
-              </AlertDescription>
-            </Alert>
-          )}
-            </div>
-          )}
-
-          {/* Duplicate Confirmation Dialog */}
-          {showDuplicateDialog && duplicateInfo && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="max-w-md mx-4">
-            <CardHeader>
-              <CardTitle>Rental Already Exists</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>This rental has already been imported:</p>
-              <div className="bg-secondary p-3 rounded">
-                <p className="font-semibold">{duplicateInfo.title}</p>
-                {duplicateInfo.address && (
-                  <p className="text-sm text-muted-foreground">{duplicateInfo.address}</p>
-                )}
-              </div>
-              <p className="text-sm">
-                Do you want to update the existing rental with the new data?
-                The location coordinates will be preserved.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleCancelUpdate}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isSaving}
-                >
-                  Cancel
-                </Button>
-                <Link href={`/rentals/${duplicateInfo.id}`} className="flex-1">
-                  <Button variant="outline" className="w-full" disabled={isSaving}>
-                    View Existing
-                  </Button>
-                </Link>
-                <Button
-                  onClick={handleConfirmUpdate}
-                  className="flex-1"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Updating..." : "Update"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

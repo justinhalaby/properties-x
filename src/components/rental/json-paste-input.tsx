@@ -25,7 +25,11 @@ export function JsonPasteInput({
         throw new Error("Invalid Facebook Marketplace JSON format. Please check your data and try again.");
       }
 
-      onParsed(parsed as FacebookRental);
+      // Unwrap new format (with facebook_id/raw_data) to flat format
+      const isNewFormat = 'facebook_id' in parsed && 'raw_data' in parsed;
+      const rentalData = isNewFormat ? parsed.raw_data : parsed;
+
+      onParsed(rentalData as FacebookRental);
     } catch (err) {
       if (err instanceof SyntaxError) {
         onError("Invalid JSON format. Please check for syntax errors.");
@@ -46,12 +50,12 @@ export function JsonPasteInput({
         <Textarea
           value={jsonInput}
           onChange={(e) => setJsonInput(e.target.value)}
-          placeholder='{"extractedDate": "...", "id": "...", "title": "...", ...}'
+          placeholder='{"facebook_id": "...", "source_url": "...", "raw_data": {...}}'
           rows={15}
           className="font-mono text-sm"
         />
         <p className="text-xs text-muted-foreground mt-2">
-          Paste the JSON output from the Facebook Marketplace scraper (fb-rental.js)
+          Paste the JSON output from the Facebook Marketplace scraper (consoleScrape/fb-rentals-v2.js)
         </p>
       </div>
       <Button

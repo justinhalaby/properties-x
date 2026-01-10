@@ -1,46 +1,67 @@
 import type { FacebookRental, CreateRentalInput, ParsedFacebookRental } from '@/types/rental';
+import type { FacebookRentalRaw } from '@/types/facebook-rental-raw';
+
+/**
+ * Unwrap FacebookRentalRaw format to FacebookRental format
+ * Handles both new (wrapped) and old (flat) formats
+ */
+function unwrapFacebookRentalJson(data: any): FacebookRental {
+  // Check if it's the new format (with facebook_id and raw_data wrapper)
+  const isNewFormat = 'facebook_id' in data && 'raw_data' in data;
+
+  if (isNewFormat) {
+    const wrapped = data as FacebookRentalRaw;
+    // Return the raw_data content as FacebookRental
+    return wrapped.raw_data as FacebookRental;
+  }
+
+  // Already in flat format
+  return data as FacebookRental;
+}
 
 /**
  * Parses Facebook Marketplace rental JSON into database format
  */
-export function parseFacebookRental(json: FacebookRental): ParsedFacebookRental {
+export function parseFacebookRental(json: FacebookRental | FacebookRentalRaw): ParsedFacebookRental {
+  // Unwrap if needed
+  const rental = unwrapFacebookRentalJson(json);
   const warnings: string[] = [];
   const errors: string[] = [];
 
   // Parse monthly rent from "CA$2,175 / Month"
-  const monthlyRent = parseRentPrice(json.price, warnings);
+  const monthlyRent = parseRentPrice(rental.price, warnings);
 
   // Parse bedrooms and bathrooms from unitDetails
-  const { bedrooms, bathrooms } = parseBedroomsBathrooms(json.unitDetails, warnings);
+  const { bedrooms, bathrooms } = parseBedroomsBathrooms(rental.unitDetails, warnings);
 
   // Parse location components from "Montréal, QC, H2S 2Z5"
-  const { city, postalCode } = parseLocation(json.rentalLocation, warnings);
+  const { city, postalCode } = parseLocation(rental.rentalLocation, warnings);
 
   // Categorize unit details into structured fields
-  const { unitType, petPolicy, amenities } = categorizeUnitDetails(json.unitDetails);
+  const { unitType, petPolicy, amenities } = categorizeUnitDetails(rental.unitDetails);
 
   // Build the input object
   const input: CreateRentalInput = {
-    source_url: json.url,
+    source_url: rental.url,
     source_name: 'facebook_marketplace',
-    facebook_id: json.id,
-    extracted_date: json.extractedDate,
-    title: json.title,
-    address: json.address || undefined,
+    facebook_id: rental.id,
+    extracted_date: rental.extractedDate,
+    title: rental.title,
+    address: rental.address || undefined,
     city: city,
     postal_code: postalCode,
-    rental_location: json.rentalLocation,
+    rental_location: rental.rentalLocation,
     monthly_rent: monthlyRent,
     bedrooms: bedrooms,
     bathrooms: bathrooms,
     unit_type: unitType,
     pet_policy: petPolicy,
     amenities: amenities,
-    unit_details_raw: json.unitDetails,
-    building_details: json.buildingDetails,
-    description: json.description || undefined,
-    seller_name: json.sellerInfo?.name || undefined,
-    seller_profile_url: json.sellerInfo?.profileUrl || undefined,
+    unit_details_raw: rental.unitDetails,
+    building_details: rental.buildingDetails,
+    description: rental.description || undefined,
+    seller_name: rental.sellerInfo?.name || undefined,
+    seller_profile_url: rental.sellerInfo?.profileUrl || undefined,
     // Images and videos will be processed separately after rental creation
     images: [],
     videos: [],
@@ -198,12 +219,34 @@ function categorizeUnitDetails(unitDetails: string[]): {
 
 /**
  * Validate JSON structure before parsing
+ * Supports both old flat format and new FacebookRentalRaw format
  */
 export function validateFacebookRentalJson(data: unknown): data is FacebookRental {
   if (typeof data !== 'object' || data === null) return false;
 
   const obj = data as Record<string, unknown>;
 
+  // Check if it's the new format (with facebook_id and raw_data wrapper)
+  const isNewFormat = 'facebook_id' in obj && 'raw_data' in obj;
+
+  if (isNewFormat) {
+    // Validate new format structure
+    if (typeof obj.raw_data !== 'object' || obj.raw_data === null) return false;
+
+    const rawData = obj.raw_data as Record<string, unknown>;
+
+    // Required fields in raw_data
+    if (typeof rawData.title !== 'string') return false;
+    if (typeof rawData.price !== 'string') return false;
+
+    // Optional but structured fields
+    if (rawData.unitDetails && !Array.isArray(rawData.unitDetails)) return false;
+    if (rawData.buildingDetails && !Array.isArray(rawData.buildingDetails)) return false;
+
+    return true;
+  }
+
+  // Validate old flat format
   // Required fields
   if (typeof obj.title !== 'string') return false;
   if (typeof obj.price !== 'string') return false;

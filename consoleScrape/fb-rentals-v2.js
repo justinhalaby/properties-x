@@ -1,6 +1,8 @@
 (async () => {
-  const data = {
-    extractedDate: new Date().toISOString(),
+  const extractedDate = new Date().toISOString();
+
+  const raw_data = {
+    extractedDate: extractedDate,
     id: null,
     url: null,
     title: null,
@@ -30,20 +32,20 @@
   }
 
   // URL and ID from current page
-  data.url = window.location.href.split('?')[0];
-  const idMatch = data.url.match(/\/item\/(\d+)/);
-  if (idMatch) data.id = idMatch[1];
+  raw_data.url = window.location.href.split('?')[0];
+  const idMatch = raw_data.url.match(/\/item\/(\d+)/);
+  if (idMatch) raw_data.id = idMatch[1];
 
   // Title - first h1 span
   const titleEl = document.querySelector('h1 span');
-  if (titleEl) data.title = titleEl.textContent.trim();
+  if (titleEl) raw_data.title = titleEl.textContent.trim();
 
   // Price - look for the CA$ pattern
   const allSpans = document.querySelectorAll('span');
   for (const span of allSpans) {
     const text = span.textContent.trim();
     if (text.match(/^CA\$[\d,]+\s*\/\s*Month$/i)) {
-      data.price = text;
+      raw_data.price = text;
       break;
     }
   }
@@ -52,7 +54,7 @@
   for (const span of allSpans) {
     const text = span.textContent.trim();
     if (text.match(/^\d+.*,\s*Montréal,\s*QC$/i)) {
-      data.address = text;
+      raw_data.address = text;
       break;
     }
   }
@@ -61,20 +63,20 @@
   for (const span of allSpans) {
     const text = span.textContent.trim();
     if (text.match(/^Montréal,\s*QC,\s*[A-Z]\d[A-Z]\s*\d[A-Z]\d$/i)) {
-      data.rentalLocation = text;
+      raw_data.rentalLocation = text;
       break;
     }
   }
 
   // Rental Location - Method 2: Neighborhood/area name fallback
-  if (!data.rentalLocation) {
+  if (!raw_data.rentalLocation) {
     for (const span of allSpans) {
       const text = span.textContent.trim();
       // Match patterns like "Ville-Marie, Montréal, QC" or "Le Plateau-Mont-Royal, Montréal, QC"
-      if (text.match(/^[A-Za-zÀ-ÿ\-\s']+,\s*Montréal,\s*QC$/i) && 
-          !text.match(/^\d/) && 
+      if (text.match(/^[A-Za-zÀ-ÿ\-\s']+,\s*Montréal,\s*QC$/i) &&
+          !text.match(/^\d/) &&
           text.length < 60) {
-        data.rentalLocation = text;
+        raw_data.rentalLocation = text;
         break;
       }
     }
@@ -87,19 +89,19 @@
 
   listItems.forEach(item => {
     const originalText = item.querySelector('span')?.textContent.trim();
-    
+
     if (originalText && originalText.length < 100 && originalText.length > 2) {
       const lowerText = originalText.toLowerCase();
-      
+
       if (buildingKeywords.some(k => lowerText.includes(k))) {
-        if (!data.buildingDetails.includes(originalText)) {
-          data.buildingDetails.push(originalText);
+        if (!raw_data.buildingDetails.includes(originalText)) {
+          raw_data.buildingDetails.push(originalText);
         }
       }
-      
+
       if (unitKeywords.some(k => lowerText.includes(k))) {
-        if (!data.unitDetails.includes(originalText)) {
-          data.unitDetails.push(originalText);
+        if (!raw_data.unitDetails.includes(originalText)) {
+          raw_data.unitDetails.push(originalText);
         }
       }
     }
@@ -113,7 +115,7 @@
       if (parent) {
         const descSpan = parent.querySelector('span[dir="auto"]');
         if (descSpan && descSpan.textContent.length > 50) {
-          data.description = descSpan.textContent.replace(/See (less|more)$/i, '').trim();
+          raw_data.description = descSpan.textContent.replace(/See (less|more)$/i, '').trim();
           break;
         }
       }
@@ -121,7 +123,7 @@
   }
 
   // Description - Method 2: Fallback with case-insensitive matching
-  if (!data.description) {
+  if (!raw_data.description) {
     const descriptionKeywords = [
       '🏠', 'disponible au', 'disponible à', 'disponible le', 'à proximité',
       'nearby', 'balcony', 'balcon', 'available', 'location', 'apartment',
@@ -133,17 +135,17 @@
       'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
       'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
       'january', 'february', 'march', 'april', 'may', 'june',
-      'july', 'august', 'september', 'october', 'november', 'december'
+      'july', 'august', 'september', 'october', 'november', 'december', 'Available now '
     ];
 
     for (const span of allSpans) {
       const text = span.textContent.trim();
       const lowerText = text.toLowerCase();
-      
-      if (text.length > 100 && 
-          !lowerText.includes('ca$') && 
+
+      if (text.length > 100 &&
+          !lowerText.includes('ca$') &&
           descriptionKeywords.some(k => lowerText.includes(k.toLowerCase()))) {
-        data.description = text.replace(/See (less|more)$/i, '').trim();
+        raw_data.description = text.replace(/See (less|more)$/i, '').trim();
         break;
       }
     }
@@ -157,8 +159,8 @@
     if (nameSpan && href) {
       const name = nameSpan.textContent.trim();
       if (name && !name.includes('Seller') && name.length > 2) {
-        data.sellerInfo.name = name;
-        data.sellerInfo.profileUrl = 'https://www.facebook.com' + href.split('?')[0];
+        raw_data.sellerInfo.name = name;
+        raw_data.sellerInfo.profileUrl = 'https://www.facebook.com' + href.split('?')[0];
         break;
       }
     }
@@ -170,8 +172,8 @@
     const src = img.getAttribute('src');
     const alt = img.getAttribute('alt') || '';
     if (src && src.includes('scontent') && !alt.includes('video thumbnail')) {
-      if (!data.media.images.includes(src)) {
-        data.media.images.push(src);
+      if (!raw_data.media.images.includes(src)) {
+        raw_data.media.images.push(src);
       }
     }
   });
@@ -179,8 +181,8 @@
   const photoImages = document.querySelectorAll('img[alt^="Photo of"]');
   photoImages.forEach(img => {
     const src = img.getAttribute('src');
-    if (src && !data.media.images.includes(src)) {
-      data.media.images.push(src);
+    if (src && !raw_data.media.images.includes(src)) {
+      raw_data.media.images.push(src);
     }
   });
 
@@ -188,8 +190,8 @@
   const videoElements = document.querySelectorAll('video[src]');
   videoElements.forEach(video => {
     const src = video.getAttribute('src');
-    if (src && src.includes('video.') && !data.media.videos.includes(src)) {
-      data.media.videos.push(src);
+    if (src && src.includes('video.') && !raw_data.media.videos.includes(src)) {
+      raw_data.media.videos.push(src);
     }
   });
 
@@ -197,12 +199,21 @@
   videoThumbnails.forEach(img => {
     const src = img.getAttribute('src');
     if (src) {
-      data.media.videoThumbnails = data.media.videoThumbnails || [];
-      if (!data.media.videoThumbnails.includes(src)) {
-        data.media.videoThumbnails.push(src);
+      raw_data.media.videoThumbnails = raw_data.media.videoThumbnails || [];
+      if (!raw_data.media.videoThumbnails.includes(src)) {
+        raw_data.media.videoThumbnails.push(src);
       }
     }
   });
 
-  console.log(data);
+  // Wrap in FacebookRentalRaw format
+  const result = {
+    facebook_id: raw_data.id,
+    source_url: raw_data.url,
+    extracted_date: extractedDate,
+    scraper_version: 'console-v2',
+    raw_data: raw_data
+  };
+
+  console.log(result);
 })();
