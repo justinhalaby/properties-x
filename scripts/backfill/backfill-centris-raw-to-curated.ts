@@ -1,13 +1,13 @@
 /**
- * Facebook Pipeline Stage 1: RAW → CURATED
- * Transforms raw JSON from storage to FacebookRentalCurated table
+ * Centris Pipeline Stage 1: RAW → CURATED
+ * Transforms raw JSON from storage to CentrisRentalCurated table
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { transformRawToCurated } from '../src/lib/transformers/facebook-rental-curated-transformer';
-import type { FacebookRentalRaw } from '../src/types/facebook-rental-raw';
+import { transformRawToCurated } from '../../src/lib/transformers/centris-rental-curated-transformer';
+import type { CentrisRentalRaw } from '../../src/types/centris-rental-raw';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -26,12 +26,12 @@ interface Stats {
   succeeded: number;
   failed: number;
   skipped: number;
-  errors: Array<{ facebookId: string; error: string }>;
+  errors: Array<{ centrisId: string; error: string }>;
 }
 
 async function main() {
-  console.log('\n🚀 Facebook: RAW → CURATED Transformation');
-  console.log('==========================================\n');
+  console.log('\n🚀 Centris: RAW → CURATED Transformation');
+  console.log('=========================================\n');
 
   const stats: Stats = {
     total: 0,
@@ -41,10 +41,11 @@ async function main() {
     errors: [],
   };
 
-  // Find all metadata records (including those with curated_id to update storage paths)
+  // Find all metadata records with successful scrapes (including those with curated_id to update storage paths)
   const { data: metadataRecords, error: fetchError } = await supabase
-    .from('facebook_rentals_metadata')
+    .from('centris_rentals_metadata')
     .select('*')
+    .eq('scrape_status', 'success')
     .order('created_at', { ascending: true });
 
   if (fetchError) {
@@ -64,24 +65,24 @@ async function main() {
     const metadata = metadataRecords[i];
     const progress = `[${i + 1}/${stats.total}]`;
 
-    console.log(`${progress} Processing ${metadata.facebook_id}`);
+    console.log(`${progress} Processing ${metadata.centris_id}`);
 
     try {
       // Download raw JSON from storage
       const { data: fileData, error: downloadError } = await supabase.storage
-        .from('facebook-raw-rentals')
+        .from('centris-raw')
         .download(metadata.storage_path);
 
       if (downloadError || !fileData) {
         stats.failed++;
         const errorMsg = `Storage download failed: ${downloadError?.message}`;
         console.log(`  ❌ ${errorMsg}`);
-        stats.errors.push({ facebookId: metadata.facebook_id, error: errorMsg });
+        stats.errors.push({ centrisId: metadata.centris_id, error: errorMsg });
         continue;
       }
 
       const rawJsonText = await fileData.text();
-      const rawData: FacebookRentalRaw = JSON.parse(rawJsonText);
+      const rawData: CentrisRentalRaw = JSON.parse(rawJsonText);
 
       // Transform raw → curated
       const { curatedInput, warnings, errors } = transformRawToCurated(rawData);
@@ -90,11 +91,11 @@ async function main() {
         stats.failed++;
         const errorMsg = errors.join('; ');
         console.log(`  ❌ Transformation errors: ${errorMsg}`);
-        stats.errors.push({ facebookId: metadata.facebook_id, error: errorMsg });
+        stats.errors.push({ centrisId: metadata.centris_id, error: errorMsg });
 
         // Update metadata with error
         await supabase
-          .from('facebook_rentals_metadata')
+          .from('centris_rentals_metadata')
           .update({
             transformation_status: 'failed',
             transformation_error: errorMsg,
@@ -110,9 +111,9 @@ async function main() {
 
       // Check if curated record exists
       const { data: existingCurated } = await supabase
-        .from('FacebookRentalCurated')
+        .from('CentrisRentalCurated')
         .select('id')
-        .eq('facebook_id', metadata.facebook_id)
+        .eq('centris_id', metadata.centris_id)
         .maybeSingle();
 
       let curated;
@@ -121,7 +122,7 @@ async function main() {
       if (existingCurated) {
         // Update existing
         const { data, error } = await supabase
-          .from('FacebookRentalCurated')
+          .from('CentrisRentalCurated')
           .update(curatedInput)
           .eq('id', existingCurated.id)
           .select()
@@ -132,7 +133,7 @@ async function main() {
       } else {
         // Insert new
         const { data, error } = await supabase
-          .from('FacebookRentalCurated')
+          .from('CentrisRentalCurated')
           .insert(curatedInput)
           .select()
           .single();
@@ -145,10 +146,10 @@ async function main() {
         stats.failed++;
         const errorMsg = `Database error: ${curatedError?.message}`;
         console.log(`  ❌ ${errorMsg}`);
-        stats.errors.push({ facebookId: metadata.facebook_id, error: errorMsg });
+        stats.errors.push({ centrisId: metadata.centris_id, error: errorMsg });
 
         await supabase
-          .from('facebook_rentals_metadata')
+          .from('centris_rentals_metadata')
           .update({
             transformation_status: 'failed',
             transformation_error: errorMsg,
@@ -161,7 +162,7 @@ async function main() {
 
       // Update metadata with curated_id
       await supabase
-        .from('facebook_rentals_metadata')
+        .from('centris_rentals_metadata')
         .update({ curated_id: curated.id })
         .eq('id', metadata.id);
 
@@ -176,7 +177,7 @@ async function main() {
       stats.failed++;
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.log(`  ❌ ${errorMsg}`);
-      stats.errors.push({ facebookId: metadata.facebook_id, error: errorMsg });
+      stats.errors.push({ centrisId: metadata.centris_id, error: errorMsg });
     }
 
     // Small delay
@@ -186,7 +187,7 @@ async function main() {
   }
 
   // Summary
-  console.log('\n==========================================');
+  console.log('\n=========================================');
   console.log('📊 Summary\n');
   console.log(`Total:     ${stats.total}`);
   console.log(`✅ Success: ${stats.succeeded}`);
@@ -195,12 +196,12 @@ async function main() {
 
   if (stats.errors.length > 0) {
     console.log('\n❌ Failed Records:\n');
-    stats.errors.forEach(({ facebookId, error }) => {
-      console.log(`${facebookId}: ${error}`);
+    stats.errors.forEach(({ centrisId, error }) => {
+      console.log(`${centrisId}: ${error}`);
     });
   }
 
-  console.log('==========================================\n');
+  console.log('=========================================\n');
 
   if (stats.failed > 0) {
     process.exit(1);

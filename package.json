@@ -15,8 +15,7 @@
     "backfill:facebook:raw-to-curated": "dotenv -e .env.local -- tsx scripts/backfill-facebook-raw-to-curated.ts",
     "backfill:facebook:curated-to-rentals": "dotenv -e .env.local -- tsx scripts/backfill-facebook-curated-to-rentals.ts",
     "backfill:centris:raw-to-curated": "dotenv -e .env.local -- tsx scripts/backfill-centris-raw-to-curated.ts",
-    "backfill:centris:curated-to-rentals": "dotenv -e .env.local -- tsx scripts/backfill-centris-curated-to-rentals.ts",
-    "backfill:facebook:metadata": "dotenv -e .env.local -- tsx scripts/populate-facebook-metadata.ts"
+    "backfill:centris:curated-to-rentals": "dotenv -e .env.local -- tsx scripts/backfill-centris-curated-to-rentals.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

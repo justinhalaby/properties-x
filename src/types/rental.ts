@@ -7,6 +7,7 @@ export interface Rental {
   source_name: string | null;
   facebook_id: string | null;
   centris_id: string | null; // Centris listing ID for linking to raw data
+  raw_data_storage_path: string | null; // Path to raw JSON in storage bucket
   extracted_date: string | null;
   title: string;
   address: string | null;

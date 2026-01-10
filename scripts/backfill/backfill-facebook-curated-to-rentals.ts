@@ -6,9 +6,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { transformCuratedToRental } from '../src/lib/transformers/facebook-rental-transformer';
-import { geocodeAddress } from '../src/lib/geocoding/nominatim';
-import type { FacebookRentalCurated } from '../src/types/facebook-rental-curated';
+import { transformCuratedToRental } from '../../src/lib/transformers/facebook-rental-transformer';
+import { geocodeAddress } from '../../src/lib/geocoding/nominatim';
+import type { FacebookRentalCurated } from '../../src/types/facebook-rental-curated';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
