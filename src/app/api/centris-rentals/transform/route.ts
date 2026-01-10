@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { transformCentrisRawToRental } from '@/lib/transformers/centris-rental-transformer';
+import { transformRawToCurated } from '@/lib/transformers/centris-rental-curated-transformer';
+import { transformCuratedToRental } from '@/lib/transformers/centris-rental-transformer';
 import { geocodeAddress } from '@/lib/geocoding/nominatim';
-import { processMediaArray } from '@/lib/storage/rental-media';
 import type { CentrisRentalRaw } from '@/types/centris-rental-raw';
 
 /**
  * POST /api/centris-rentals/transform
- * Transforms raw Centris data from Storage to rental
+ * Transforms raw Centris data from Storage → CentrisRentalCurated → rental
+ * Two-stage pipeline for better data quality and debugging
  *
  * Body: { centrisId: string }
- * Returns: { rental, warnings, message }
+ * Returns: { curated, rental, warnings, message }
  */
 export async function POST(request: Request) {
   try {
-    const { centrisId } = await request.json();
+    const { centrisId, force } = await request.json();
 
     if (!centrisId) {
       return NextResponse.json(
@@ -39,6 +40,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. Check if already transformed (has rental_id)
+    if (metadata.rental_id && !force) {
+      // Get rental details to show in the warning
+      const { data: existingRental } = await supabase
+        .from('rentals')
+        .select('id, title, address, monthly_rent, created_at')
+        .eq('id', metadata.rental_id)
+        .single();
+
+      return NextResponse.json(
+        {
+          alreadyTransformed: true,
+          existingRental,
+          message: 'This listing has already been transformed. Use force=true to re-transform.',
+        },
+        { status: 409 } // 409 Conflict
+      );
+    }
+
     // 2. Download raw JSON from Storage (use service role to bypass RLS)
     const supabaseServiceRole = createServiceRoleClient();
     const { data: fileData, error: downloadError } = await supabaseServiceRole.storage
@@ -55,28 +75,108 @@ export async function POST(request: Request) {
     const rawJsonText = await fileData.text();
     const rawData: CentrisRentalRaw = JSON.parse(rawJsonText);
 
-    // 3. Transform
-    const { rentalInput, warnings, errors } =
-      transformCentrisRawToRental(rawData);
+    // 3. Transform raw → curated
+    const { curatedInput, warnings: curatedWarnings, errors: curatedErrors } =
+      transformRawToCurated(rawData);
 
-    if (errors.length > 0) {
+    const allWarnings: string[] = [...curatedWarnings];
+    const allErrors: string[] = [...curatedErrors];
+
+    if (curatedErrors.length > 0) {
       // Update transformation status
       await supabase
         .from('centris_rentals_metadata')
         .update({
           transformation_status: 'failed',
-          transformation_error: errors.join('; '),
+          transformation_error: curatedErrors.join('; '),
           transformation_attempts: metadata.transformation_attempts + 1,
         })
         .eq('id', metadata.id);
 
       return NextResponse.json(
-        { error: 'Transformation failed', details: errors },
+        { error: 'Curated transformation failed', details: curatedErrors },
         { status: 400 }
       );
     }
 
-    // 4. Geocode address (only if we don't already have coordinates from structured data)
+    // 4. Insert or update CentrisRentalCurated table
+    // Check if curated record already exists by centris_id
+    const { data: existingCurated } = await supabase
+      .from('CentrisRentalCurated')
+      .select('id')
+      .eq('centris_id', centrisId)
+      .maybeSingle();
+
+    let curated;
+    let curatedError;
+
+    if (existingCurated) {
+      // Update existing curated record
+      const { data, error } = await supabase
+        .from('CentrisRentalCurated')
+        .update(curatedInput)
+        .eq('id', existingCurated.id)
+        .select()
+        .single();
+
+      curated = data;
+      curatedError = error;
+    } else {
+      // Insert new curated record
+      const { data, error } = await supabase
+        .from('CentrisRentalCurated')
+        .insert(curatedInput)
+        .select()
+        .single();
+
+      curated = data;
+      curatedError = error;
+    }
+
+    if (curatedError || !curated) {
+      console.error('Curated operation error:', curatedError);
+
+      await supabase
+        .from('centris_rentals_metadata')
+        .update({
+          transformation_status: 'failed',
+          transformation_error: 'Failed to save curated record: ' + curatedError?.message,
+          transformation_attempts: metadata.transformation_attempts + 1,
+        })
+        .eq('id', metadata.id);
+
+      return NextResponse.json(
+        { error: 'Failed to save curated record: ' + curatedError?.message },
+        { status: 500 }
+      );
+    }
+
+    // 5. Transform curated → rental
+    const { rentalInput, warnings: rentalWarnings, errors: rentalErrors } =
+      transformCuratedToRental(curated);
+
+    allWarnings.push(...rentalWarnings);
+    allErrors.push(...rentalErrors);
+
+    if (rentalErrors.length > 0) {
+      // Update transformation status
+      await supabase
+        .from('centris_rentals_metadata')
+        .update({
+          transformation_status: 'failed',
+          transformation_error: rentalErrors.join('; '),
+          transformation_attempts: metadata.transformation_attempts + 1,
+          curated_id: curated.id, // Link to curated even if rental failed
+        })
+        .eq('id', metadata.id);
+
+      return NextResponse.json(
+        { error: 'Rental transformation failed', details: rentalErrors },
+        { status: 400 }
+      );
+    }
+
+    // 6. Geocode address (only if we don't already have coordinates from curated data)
     if (!rentalInput.latitude && !rentalInput.longitude && rentalInput.address) {
       try {
         const coords = await geocodeAddress(
@@ -89,64 +189,100 @@ export async function POST(request: Request) {
           rentalInput.latitude = coords.latitude;
           rentalInput.longitude = coords.longitude;
         } else {
-          warnings.push('Could not geocode address');
+          allWarnings.push('Could not geocode address');
         }
       } catch (geoError) {
         console.error('Geocoding error:', geoError);
-        warnings.push('Geocoding failed');
+        allWarnings.push('Geocoding failed');
       }
     }
 
-    // 5. Use already-downloaded images from metadata
+    // 7. Use already-downloaded images from metadata
     const imageStoragePaths = metadata.images || [];
     if (imageStoragePaths.length === 0) {
-      warnings.push('No images were downloaded during scraping');
+      allWarnings.push('No images were downloaded during scraping');
     }
 
-    // 6. Create rental with pre-downloaded images
-    const { data: rental, error: rentalError } = await supabase
+    // 8. Create or update rental with pre-downloaded images
+    let rental;
+    let rentalError;
+
+    const rentalData = {
+      ...rentalInput,
+      images: imageStoragePaths,
+      geocoded_at: rentalInput.latitude ? new Date().toISOString() : null,
+    };
+
+    // Check if rental already exists by centris_id
+    const { data: existingRentalBycentrisId } = await supabase
       .from('rentals')
-      .insert({
-        ...rentalInput,
-        images: imageStoragePaths,
-        geocoded_at: rentalInput.latitude ? new Date().toISOString() : null,
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('centris_id', centrisId)
+      .maybeSingle();
+
+    // If rental exists (either from metadata or by centris_id), UPDATE it
+    if (existingRentalBycentrisId || (force && metadata.rental_id)) {
+      const rentalIdToUpdate = existingRentalBycentrisId?.id || metadata.rental_id;
+
+      const { data, error } = await supabase
+        .from('rentals')
+        .update(rentalData)
+        .eq('id', rentalIdToUpdate)
+        .select()
+        .single();
+
+      rental = data;
+      rentalError = error;
+    } else {
+      // New transformation - INSERT
+      const { data, error } = await supabase
+        .from('rentals')
+        .insert(rentalData)
+        .select()
+        .single();
+
+      rental = data;
+      rentalError = error;
+    }
 
     if (rentalError || !rental) {
-      console.error('Rental insert error:', rentalError);
+      console.error('Rental operation error:', rentalError);
 
       // Update transformation status
       await supabase
         .from('centris_rentals_metadata')
         .update({
           transformation_status: 'failed',
-          transformation_error: 'Failed to create rental: ' + rentalError?.message,
+          transformation_error: 'Failed to save rental: ' + rentalError?.message,
           transformation_attempts: metadata.transformation_attempts + 1,
+          curated_id: curated.id, // Link to curated even if rental failed
         })
         .eq('id', metadata.id);
 
       return NextResponse.json(
-        { error: 'Failed to create rental: ' + rentalError?.message },
+        { error: 'Failed to save rental: ' + rentalError?.message },
         { status: 500 }
       );
     }
 
-    // 7. Update metadata table
+    // 9. Update metadata table with both curated_id and rental_id
     await supabase
       .from('centris_rentals_metadata')
       .update({
         transformation_status: 'success',
         transformed_at: new Date().toISOString(),
+        curated_id: curated.id,
         rental_id: rental.id,
       })
       .eq('id', metadata.id);
 
     return NextResponse.json({
+      curated,
       rental,
-      warnings: warnings.length > 0 ? warnings : undefined,
-      message: 'Transformation successful',
+      warnings: allWarnings.length > 0 ? allWarnings : undefined,
+      message: (existingCurated || existingRentalBycentrisId)
+        ? `Re-transformation successful: ${existingCurated ? 'Updated' : 'Created'} curated record and ${existingRentalBycentrisId ? 'updated' : 'created'} rental`
+        : 'Two-stage transformation successful (raw → curated → rental)',
     });
   } catch (error) {
     console.error('Unexpected error in transform endpoint:', error);

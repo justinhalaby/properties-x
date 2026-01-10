@@ -17,6 +17,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ImportMode = "url" | "json";
 type Step = "scrape" | "transform";
@@ -81,6 +89,16 @@ export function CentrisRentalImport() {
   const [countdown, setCountdown] = useState(0);
   const [isDelaying, setIsDelaying] = useState(false);
 
+  // Existing listing modal state
+  const [showExistingModal, setShowExistingModal] = useState(false);
+  const [existingRental, setExistingRental] = useState<{
+    id: string;
+    title: string;
+    address: string | null;
+    monthly_rent: number | null;
+    created_at: string;
+  } | null>(null);
+
   const handleScrapeUrl = async () => {
     if (!url.trim()) {
       setError("Please enter a Centris URL");
@@ -113,9 +131,21 @@ export function CentrisRentalImport() {
 
       setScrapeResult(result);
 
-      // If already exists and transformed, redirect to rental
+      // If already exists and transformed, show modal instead of auto-redirect
       if (result.alreadyExists && result.status === "success" && result.rentalId) {
-        router.push(`/rentals/${result.rentalId}`);
+        // Fetch rental details to show in modal
+        const rentalResponse = await fetch(`/api/rentals/${result.rentalId}`);
+        if (rentalResponse.ok) {
+          const rentalData = await rentalResponse.json();
+          setExistingRental({
+            id: rentalData.data.id,
+            title: rentalData.data.title,
+            address: rentalData.data.address,
+            monthly_rent: rentalData.data.monthly_rent,
+            created_at: rentalData.data.created_at,
+          });
+          setShowExistingModal(true);
+        }
         return;
       }
 
@@ -184,9 +214,21 @@ export function CentrisRentalImport() {
 
       setScrapeResult(result);
 
-      // If already exists and transformed, redirect to rental
+      // If already exists and transformed, show modal instead of auto-redirect
       if (result.alreadyExists && result.status === "success" && result.rentalId) {
-        router.push(`/rentals/${result.rentalId}`);
+        // Fetch rental details to show in modal
+        const rentalResponse = await fetch(`/api/rentals/${result.rentalId}`);
+        if (rentalResponse.ok) {
+          const rentalData = await rentalResponse.json();
+          setExistingRental({
+            id: rentalData.data.id,
+            title: rentalData.data.title,
+            address: rentalData.data.address,
+            monthly_rent: rentalData.data.monthly_rent,
+            created_at: rentalData.data.created_at,
+          });
+          setShowExistingModal(true);
+        }
         return;
       }
 
@@ -205,7 +247,7 @@ export function CentrisRentalImport() {
     }
   };
 
-  const handleTransform = async () => {
+  const handleTransform = async (forceRetransform = false) => {
     if (!scrapeResult) return;
 
     setIsProcessing(true);
@@ -216,13 +258,24 @@ export function CentrisRentalImport() {
       const response = await fetch("/api/centris-rentals/transform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ centrisId: scrapeResult.centrisId }),
+        body: JSON.stringify({
+          centrisId: scrapeResult.centrisId,
+          force: forceRetransform
+        }),
       });
 
-      const result: TransformResult = await response.json();
+      const result: any = await response.json();
+
+      // Check if already transformed (409 Conflict)
+      if (response.status === 409 && result.alreadyTransformed) {
+        setExistingRental(result.existingRental);
+        setShowExistingModal(true);
+        setIsProcessing(false);
+        return;
+      }
 
       if (!response.ok) {
-        setError(result.message || "Failed to transform rental");
+        setError(result.error || result.message || "Failed to transform rental");
         return;
       }
 
@@ -236,6 +289,17 @@ export function CentrisRentalImport() {
       setError(err instanceof Error ? err.message : "Failed to transform rental");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleForceTransform = async () => {
+    setShowExistingModal(false);
+    await handleTransform(true);
+  };
+
+  const handleViewExisting = () => {
+    if (existingRental) {
+      router.push(`/rentals/${existingRental.id}`);
     }
   };
 
@@ -794,7 +858,7 @@ export function CentrisRentalImport() {
               Import Another
             </Button>
             <Button
-              onClick={handleTransform}
+              onClick={() => handleTransform()}
               className="flex-1"
               disabled={isProcessing}
             >
@@ -818,6 +882,78 @@ export function CentrisRentalImport() {
           )}
         </div>
       )}
+
+      {/* Existing Listing Modal */}
+      <Dialog open={showExistingModal} onOpenChange={setShowExistingModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Listing Already Exists</DialogTitle>
+            <DialogDescription>
+              This Centris listing has already been imported and transformed into a rental record.
+            </DialogDescription>
+          </DialogHeader>
+
+          {existingRental && (
+            <div className="space-y-3 py-4">
+              <div>
+                <p className="text-sm font-medium">Title</p>
+                <p className="text-sm text-muted-foreground">{existingRental.title}</p>
+              </div>
+
+              {existingRental.address && (
+                <div>
+                  <p className="text-sm font-medium">Address</p>
+                  <p className="text-sm text-muted-foreground">{existingRental.address}</p>
+                </div>
+              )}
+
+              {existingRental.monthly_rent && (
+                <div>
+                  <p className="text-sm font-medium">Rent</p>
+                  <p className="text-sm text-muted-foreground">
+                    ${existingRental.monthly_rent.toLocaleString()}/mo
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium">Created</p>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(existingRental.created_at).toLocaleDateString()}
+                </p>
+              </div>
+
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Re-transforming will create a new curated record and update the existing rental.
+                  This is useful if the raw data has been updated or if you need to fix parsing issues.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowExistingModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleViewExisting}
+            >
+              View Existing
+            </Button>
+            <Button
+              onClick={handleForceTransform}
+              variant="default"
+            >
+              Re-Transform
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     // Check for duplicate
     const { data: existing } = await supabase
       .from('centris_rentals_metadata')
-      .select('id, transformation_status, rental_id')
+      .select('id, centris_id, transformation_status, rental_id')
       .eq('centris_id', centrisId)
       .single();
 
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         message: 'Listing already imported',
         metadataId: existing.id,
+        centrisId: existing.centris_id,
         status: existing.transformation_status,
         rentalId: existing.rental_id,
         alreadyExists: true,

@@ -1,10 +1,168 @@
 import type { CentrisRentalRaw } from '@/types/centris-rental-raw';
+import type { CentrisRentalCurated } from '@/types/centris-rental-curated';
 import type { CreateRentalInput } from '@/types/rental';
 
 export interface TransformResult {
   rentalInput: CreateRentalInput;
   warnings: string[];
   errors: string[];
+}
+
+/**
+ * Transform curated Centris data to standard rental format
+ * This is the new preferred method - most parsing is already done in curated layer
+ */
+export function transformCuratedToRental(
+  curated: CentrisRentalCurated
+): TransformResult {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  // Extract city and borough from address
+  const { city, borough } = parseCityFromAddress(curated.address);
+
+  // Extract pet policy and amenities from remaining characteristics
+  const pet_policy = extractPetPolicy(curated.characteristics);
+  const amenities = extractAmenities(curated.characteristics);
+
+  // Build unit and building details
+  const unit_details_raw = buildUnitDetailsFromCurated(curated);
+  const building_details = extractBuildingDetailsFromCharacteristics(curated.characteristics);
+
+  return {
+    rentalInput: {
+      source_name: 'centris',
+      source_url: curated.source_url,
+      centris_id: curated.centris_id,
+      extracted_date: curated.scraped_at,
+
+      // Core fields (already parsed in curated)
+      title: curated.property_type || 'Rental',
+      address: curated.address,
+      city,
+      postal_code: null, // Will be geocoded or from characteristics
+      rental_location: borough,
+
+      // Numeric fields (already parsed in curated)
+      monthly_rent: curated.price,
+      bedrooms: curated.bedrooms,
+      bathrooms: curated.bathrooms,
+
+      // Property type
+      unit_type: inferUnitType(curated.property_type),
+
+      // Policies and amenities (extracted from remaining characteristics)
+      pet_policy,
+      amenities,
+
+      // Details
+      unit_details_raw,
+      building_details,
+      description: curated.description,
+
+      // Seller (broker already extracted in curated)
+      seller_name: curated.broker_name,
+      seller_profile_url: curated.broker_url,
+
+      // Coordinates (already parsed in curated)
+      latitude: curated.latitude,
+      longitude: curated.longitude,
+
+      // Notes (walk score and other info)
+      notes: buildNotesFromCurated(curated),
+    },
+    warnings,
+    errors,
+  };
+}
+
+/**
+ * Build unit details from curated data
+ */
+function buildUnitDetailsFromCurated(curated: CentrisRentalCurated): string[] {
+  const details: string[] = [];
+
+  if (curated.rooms) {
+    details.push(`${curated.rooms} pièces`);
+  }
+
+  if (curated.square_footage) {
+    details.push(`${curated.square_footage} sq ft`);
+  }
+
+  if (curated.parking) {
+    details.push(`Stationnement: ${curated.parking} espace${curated.parking > 1 ? 's' : ''}`);
+  }
+
+  // Add availability if in characteristics
+  if (curated.characteristics['Disponibilité']) {
+    details.push('Disponible: ' + curated.characteristics['Disponibilité']);
+  }
+
+  return details;
+}
+
+/**
+ * Extract building details from remaining characteristics
+ */
+function extractBuildingDetailsFromCharacteristics(characteristics: Record<string, string>): string[] {
+  const details: string[] = [];
+
+  // Building-related keys (these weren't extracted in curated layer)
+  const buildingKeys = [
+    'Type de bâtiment',
+    'Nombre d\'étages',
+    'Nombre de logements',
+  ];
+
+  for (const key of buildingKeys) {
+    if (characteristics[key]) {
+      details.push(`${key}: ${characteristics[key]}`);
+    }
+  }
+
+  return details;
+}
+
+/**
+ * Build notes from curated data
+ */
+function buildNotesFromCurated(curated: CentrisRentalCurated): string | null {
+  const notes: string[] = [];
+
+  // Add Walk Score if available
+  if (curated.walk_score) {
+    notes.push(`Walk Score: ${curated.walk_score}`);
+    notes.push('');
+  }
+
+  // Add year of construction if extracted
+  if (curated.year_of_construction) {
+    notes.push(`Année de construction: ${curated.year_of_construction}`);
+    notes.push('');
+  }
+
+  // Add all remaining characteristics not used elsewhere
+  const usedKeys = [
+    'Disponibilité',
+    'Type de bâtiment',
+    'Nombre d\'étages',
+    'Nombre de logements',
+  ];
+
+  const otherChars: string[] = [];
+  for (const [key, value] of Object.entries(curated.characteristics)) {
+    if (!usedKeys.includes(key)) {
+      otherChars.push(`${key}: ${value}`);
+    }
+  }
+
+  if (otherChars.length > 0) {
+    notes.push('=== Autres caractéristiques ===');
+    notes.push(...otherChars);
+  }
+
+  return notes.length > 0 ? notes.join('\n') : null;
 }
 
 /**
