@@ -5,6 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { createClient } from "@/lib/supabase/client";
 import type { Rental } from "@/types/rental";
 import Link from "next/link";
@@ -23,6 +29,8 @@ export default function RentalDetailPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [rawJson, setRawJson] = useState<any>(null);
+  const [loadingRawJson, setLoadingRawJson] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -67,6 +75,26 @@ export default function RentalDetailPage() {
       console.error("Error fetching rental:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRawJson = async () => {
+    if (!rental?.centris_id || rawJson || loadingRawJson) return;
+
+    setLoadingRawJson(true);
+    try {
+      const response = await fetch(`/api/rentals/${params.id}/raw-json`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setRawJson(result.data);
+      } else {
+        console.error('Failed to fetch raw JSON:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching raw JSON:', error);
+    } finally {
+      setLoadingRawJson(false);
     }
   };
 
@@ -194,6 +222,37 @@ export default function RentalDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap">{rental.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Raw Data */}
+          {rental.centris_id && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Raw Data</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="raw-json">
+                    <AccordionTrigger onClick={fetchRawJson}>
+                      View Centris Raw JSON
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {loadingRawJson ? (
+                        <div className="flex items-center justify-center p-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      ) : rawJson ? (
+                        <pre className="bg-secondary p-4 rounded-lg overflow-x-auto text-xs max-h-[600px]">
+                          {JSON.stringify(rawJson, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Click to load raw JSON data</p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </CardContent>
             </Card>
           )}

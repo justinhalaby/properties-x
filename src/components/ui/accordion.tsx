@@ -60,7 +60,7 @@ AccordionItem.displayName = "AccordionItem";
 interface AccordionTriggerProps extends HTMLAttributes<HTMLButtonElement> {}
 
 export const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerProps>(
-  ({ className = "", children, ...props }, ref) => {
+  ({ className = "", children, onClick, ...props }, ref) => {
     const context = useContext(AccordionContext);
     const itemValue = useContext(AccordionItemContext);
 
@@ -68,8 +68,12 @@ export const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerPr
 
     const isOpen = context.openItem === itemValue;
 
-    const handleClick = () => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       context.onItemToggle(itemValue);
+      // Call the custom onClick handler if provided
+      if (onClick) {
+        onClick(e);
+      }
     };
 
     return (
