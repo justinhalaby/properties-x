@@ -79,6 +79,9 @@ export async function POST(request: Request) {
     const { curatedInput, warnings: curatedWarnings, errors: curatedErrors } =
       transformRawToCurated(rawData);
 
+    // Add raw data storage path for traceability
+    curatedInput.raw_data_storage_path = metadata.storage_path;
+
     const allWarnings: string[] = [...curatedWarnings];
     const allErrors: string[] = [...curatedErrors];
 
@@ -211,6 +214,7 @@ export async function POST(request: Request) {
       ...rentalInput,
       images: imageStoragePaths,
       geocoded_at: rentalInput.latitude ? new Date().toISOString() : null,
+      raw_data_storage_path: metadata.storage_path,
     };
 
     // Check if rental already exists by centris_id

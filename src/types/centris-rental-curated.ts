@@ -28,6 +28,7 @@ export interface CentrisRentalCurated {
   broker_name: string | null;
   broker_url: string | null;
   characteristics: Record<string, string>;
+  raw_data_storage_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,4 +57,5 @@ export interface CreateCentrisRentalCuratedInput {
   broker_name?: string;
   broker_url?: string;
   characteristics?: Record<string, string>;
+  raw_data_storage_path?: string;
 }

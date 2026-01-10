@@ -25,6 +25,7 @@ export interface FacebookRentalCurated {
   description: string | null;
   seller_name: string | null;
   seller_profile_url: string | null;
+  raw_data_storage_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,4 +56,5 @@ export interface CreateFacebookRentalCuratedInput {
   description?: string;
   seller_name?: string;
   seller_profile_url?: string;
+  raw_data_storage_path?: string;
 }
